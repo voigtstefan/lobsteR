@@ -2,7 +2,8 @@
 .Rhistory
 .RData
 .Ruserdata
-renv/
+renv/*
+!./renv/activate.R
 .Rdata
 .httr-oauth
 .DS_Store
