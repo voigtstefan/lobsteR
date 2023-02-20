@@ -3,7 +3,7 @@
 .RData
 .Ruserdata
 renv/*
-!./renv/activate.R
+!/renv/activate.R
 .Rdata
 .httr-oauth
 .DS_Store
