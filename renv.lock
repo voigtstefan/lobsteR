@@ -51,6 +51,20 @@
       "Hash": "45f0398006e83a5b10b72a90663d8d8c",
       "Requirements": []
     },
+    "archive": {
+      "Package": "archive",
+      "Version": "1.1.5",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "ed7b553d0142e37936e924b95c876cfe",
+      "Requirements": [
+        "cli",
+        "cpp11",
+        "glue",
+        "rlang",
+        "tibble"
+      ]
+    },
     "askpass": {
       "Package": "askpass",
       "Version": "1.1",
@@ -1114,6 +1128,14 @@
         "tidyr",
         "xml2"
       ]
+    },
+    "timeDate": {
+      "Package": "timeDate",
+      "Version": "4022.108",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "3f7918d2b36c17ffe07cddba6458453e",
+      "Requirements": []
     },
     "timechange": {
       "Package": "timechange",
