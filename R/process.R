@@ -67,8 +67,21 @@
   #' the COND column contains the sales condition of the corresponding trade as defined by the NYSE
   #' the characters F, T, and I in our data example above indicate the trade being an intermarket sweep order, an extended hours trade, and/or an odd lot trade respectively.
   #' the EX column shows the exchange of the trade, and CORR is a correction indicator.
+  #'
+  extracted_files <- list.files(path, full.names = TRUE)
 
-  sampleTDataRaw <- data.table::fread(
+  stopifnot(length(extracted_files) > 0)
+
+  symbol <- gsub("_.*", "", basename(extracted_files))[1]
+
+  origin <- gsub(".*[_](\\d+-\\d+-\\d+)[_].*", "\\1", basename(extracted_files))[1]
+
+  lvl <- grep(pattern = "orderbook", x = extracted_files, value = TRUE) %>%
+    basename() %>%
+    gsub(pattern = ".*_", replacement = "") %>%
+    readr::parse_number()
+
+  tick_data_raw <- data.table::fread(
     input = grep(pattern = "message", x = extracted_files, value = TRUE),
     colClasses = c(rep("double", 6), "NULL"),
     showProgress = FALSE
@@ -79,6 +92,54 @@
     ) %>%
     .[, Time := as.POSIXct(Time, origin = as.Date(origin), tz = "GMT", format = "%Y-%m-%d %H:%M:%OS6")] %>%
     .[, MarketPrice := MarketPrice / 10000]
+
+  purrr::map2(
+    split(seq_len(4*lvl), cut(seq_len(4*lvl), lvl, labels = FALSE)),
+    seq_len(lvl),
+    ~ {
+      dt <- data.table::fread(
+        input = grep(pattern = "orderbook", x = extracted_files, value = TRUE),
+        showProgress = FALSE,
+        colClasses = ifelse(seq_len(4*lvl) %in% .x, "double", "NULL")
+      ) %>%
+        .[, .(.SD[, rep(c(TRUE, FALSE), ncol(.) / 2), with = FALSE] / 10000,
+              .SD[, rep(c(FALSE, TRUE), ncol(.) / 2), with = FALSE])] %>%
+        data.table::setcolorder(neworder = paste0("V", .x)) %>%
+        data.table::setnames(
+          old = paste0("V", .x),
+          new = c("OFR", "OFRSIZ", "BID", "BIDSIZ")
+        )
+
+      dt$DT <- tick_data_raw$Time
+      dt$SYMBOL <- symbol
+
+      data.table::setcolorder(
+        dt,
+        neworder = c("DT", "BID", "BIDSIZ", "OFR", "OFRSIZ", "SYMBOL")
+      )
+
+      data.table::fwrite(
+        x =  dt[tick_data_raw$EventType %in% c(4, 5), ],
+        file = glue::glue("{path}/{symbol}_{origin}_{.y}_QDataRaw.csv"),
+        showProgress = FALSE
+      )
+
+    }
+  )
+
+  data.table::fwrite(
+    x = tick_data_raw[EventType %in% c(4, 5), ] %>%
+      .[, .(Time, MarketSize, MarketPrice)] %>%
+      .[, SYMBOL := symbol] %>%
+      data.table::setnames(
+        old = c("Time", "MarketSize", "MarketPrice"),
+        new = c("DT", "SIZE", "PRICE")
+      ),
+    file = glue::glue("{path}/{symbol}_{origin}_{lvl}_TDataRaw.csv"),
+    showProgress = FALSE
+  )
+
+
 
   #' split the data into:
   #' 1. {symbol}_{date}_trade_{level}_raw - data from message

@@ -9,21 +9,22 @@ the PRICE column contains the prices of the trades;
 the SIZE column shows the number of shares traded;
 the COND column contains the sales condition of the corresponding trade as defined by the NYSE
 the characters F, T, and I in our data example above indicate the trade being an intermarket sweep order, an extended hours trade, and/or an odd lot trade respectively.
-the EX column shows the exchange of the trade, and CORR is a correction indicator.
-split the data into:
-1. {symbol}_{date}_trade_{level}_raw - data from message
-2. {symbol}_{date}_quote_{level}_raw - data from orderbook
-for each level within the orderbook file}
+the EX column shows the exchange of the trade, and CORR is a correction indicator.}
 \usage{
 .process_highfrequency(path, clean_up = TRUE)
 }
 \description{
+split the data into:
+1. {symbol}_{date}_trade_{level}_raw - data from message
+2. {symbol}_{date}_quote_{level}_raw - data from orderbook
+for each level within the orderbook file
+}
+\details{
 convert the file structure to:
 1. highfrequency::sampleTDataRaw
 2. highfrequency::sampleQDataRaw
 formats.
-}
-\details{
+
 think about:
 - mapping LOBSTER EventType to NYSE exchange of the trade indicator
 - not sure how to read the CORR (correction indicator)

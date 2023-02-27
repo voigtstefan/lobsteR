@@ -8,8 +8,8 @@ account_archive <- lobsteR:::.account_archive(account_login = account_login)
 request_validate <- lobsteR:::.request_query(
   symbol = "TSLA",
   start_date = Sys.Date() - 20,
-  end_date = Sys.Date(),
-  level = 1L
+  end_date = Sys.Date() - 20,
+  level = 10L
 ) %>%
   lobsteR:::.request_validate(account_archive = account_archive)
 
@@ -17,9 +17,8 @@ lobsteR:::.request_execute(account_login = account_login, request_validate = req
 
 a <- lobsteR:::.request_download(
   account_login = account_login,
-  account_archive = account_archive,
   path = getwd(),
-  id = 332757L
+  id = 332832L
 )
 
-lobsteR:::.process_cbind(path = 332757L)
+lobsteR:::.process_cbind(path = as.character(332832L), clean_up = FALSE)
