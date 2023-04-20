@@ -1,12 +1,12 @@
 Package: lobsteR
 Type: Package
-Title: What the Package Does (Title Case)
+Title: lobsteR
 Version: 0.1.0
-Author: Who wrote it
+Author: Karol Kulma, Stefan Voigt
 Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+Description: Tools to request data from lobsterdata.com, to download, unzip, and clean the data from within R.
+    The package focuses on the core functionalities required to get LOBSTER data ready fast, for subsequent typical high-frequency econometrics applications, we refer to the `highfrequency` package.
+License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.2.3
