@@ -3,13 +3,11 @@
   stopifnot(is.character(symbol))
   stopifnot(assertthat::is.date(start_date))
   stopifnot(assertthat::is.date(end_date))
-  stopifnot(is.integer(level))
+  stopifnot(is.numeric(level))
 
   param <- list(symbol, start_date, end_date, level)
 
-  param_length <- sapply(param, length) %>% unique()
-
-  stopifnot(length(param_length) == 1 & all(param_length > 0))
+  param_length <- sapply(param, length) |> unique()
 
   purrr::pmap_df(
     .l = param,
@@ -20,7 +18,7 @@
         symbol = ..1,
         start_date = date_range,
         end_date = date_range,
-        level = ..4
+        level = as.integer(..4)
       )
     }
   )
@@ -28,9 +26,9 @@
 
 .request_validate <- function(account_archive, request_query) {
 
-  holiday <- sapply(request_query$start_date, data.table::year) %>%
-    unique() %>%
-    timeDate::holidayNYSE() %>%
+  holiday <- sapply(request_query$start_date, data.table::year) |>
+    unique() |>
+    timeDate::holidayNYSE() |>
     as.Date()
 
   res <- subset(
@@ -41,25 +39,24 @@
   dplyr::anti_join(res, account_archive, by = colnames(res))
 }
 
-.request_execute <- function(account_login, request_validate) {
+.request_submit <- function(account_login, request_validate) {
 
-  purrr::pmap_lgl(
+  purrr::pwalk(
     request_validate,
     ~ {
-      rvest::html_form(x = account_login$submission)[[1]] %>%
+      rvest::html_form(x = account_login$submission)[[1]] |>
         rvest::html_form_set(
           stock1 = ..1,
           startdate1 = ..2,
           enddate1 = ..3,
           level1 = ..4
-        ) %>%
+        ) |>
         rvest::session_submit(
           x = account_login$session,
-          form = .,
+          form = _,
           submit = NULL,
           httr::add_headers('x-requested-with' = 'XMLHttpRequest')
-        ) %$%
-        assertthat::are_equal(response$status_code, 200)
+        )
     }
   )
 
@@ -71,12 +68,10 @@
 
   download <- account_archive[account_archive$id == id, ]$download
 
-  session <- rvest::jump_to(account_login$submission, download)$response
+  pwalk(account_archive)session <- rvest::session_jump_to(account_login$submission, download)$response
 
   proc <- callr::r_bg(
     function(content, filename, save_as) {
-      `%>%` <- magrittr::`%>%`
-
       writeBin(object = content, con = filename)
 
       dir.create(path = save_as, showWarnings = TRUE)

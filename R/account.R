@@ -13,8 +13,9 @@
 
   session <- rvest::session(url = "https://lobsterdata.com/SignIn.php")
 
-  form <- rvest::html_form(x = session)[[1]] %>%
-    rvest::html_form_set(login = login, pwd = pwd)
+  form <- rvest::html_form(x = session)[[1]] |>
+    rvest::html_form_set(login = login,
+                         pwd = pwd)
 
   submission <- rvest::session_submit(
     x = session,
@@ -64,10 +65,10 @@
 
   colnames(archive) <- c("symbol", "start_date", "end_date", "level", "size")
 
-  archive$download <- rvest::html_nodes(session, "td:nth-child(2) a") %>%
-    rvest::html_attr("href") %>%
-    grep("download", ., value = TRUE) %>%
-    paste0("https://lobsterdata.com/", .)
+  archive$download <- rvest::html_nodes(session, "td:nth-child(2) a") |>
+    rvest::html_attr("href") |>
+    grep("download", x = _, value = TRUE) |>
+    paste0("https://lobsterdata.com/", ... = _)
 
   archive$id <- gsub(".*id=", "", archive$download)
 

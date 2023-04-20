@@ -1,12 +1,11 @@
-#' Title
+#' .process_collect
 #'
-#' @import data.table
 #'
-#' @param path
-#' @param clean_up
+#' @param path The path of the files
+#' @param clean_up Remove the raw files after collecting lobsterdata
 #'
 #' @return blablabla
-.process_cbind <- function(path, clean_up = TRUE) {
+.process_collect <- function(path, clean_up = TRUE) {
 
   extracted_files <- list.files(path, full.names = TRUE)
 
@@ -14,148 +13,181 @@
 
   symbol <- gsub("_.*", "", basename(extracted_files))[1]
 
-  origin <- gsub(".*[_](\\d+-\\d+-\\d+)[_].*", "\\1", basename(extracted_files))[1]
+  date <- gsub(".*[_](\\d+-\\d+-\\d+)[_].*", "\\1", basename(extracted_files))[1]
 
   # Modify message file
-  message_file <- data.table::fread(
-    input = grep(pattern = "message", x = extracted_files, value = TRUE),
-    colClasses = c(rep("double", 6), "NULL"),
-    showProgress = FALSE
-  ) %>%
-    data.table::setnames(
-      old = paste0("V", seq_len(6)),
-      new = c("Time", "EventType", "OrderId", "MarketSize", "MarketPrice", "Direction")
-    ) %>%
-    .[, Time := as.POSIXct(Time, origin = as.Date(origin), tz = "GMT", format = "%Y-%m-%d %H:%M:%OS6")] %>%
-    .[, MarketPrice := MarketPrice / 10000]
-
-  # Modify orderbook file
-
-  orderbook_file <- data.table::fread(
-    input = grep(pattern = "orderbook", x = extracted_files, value = TRUE),
-    showProgress = FALSE
-  ) %>%
-    .[, .(.SD[, rep(c(TRUE, FALSE), ncol(.) / 2), with = FALSE] / 10000,
-          .SD[, rep(c(FALSE, TRUE), ncol(.) / 2), with = FALSE])] %>%
-    data.table::setcolorder(neworder = paste0("V", seq_len(ncol(.)))) %>%
-    data.table::setnames(
-      old = paste0("V", seq_len(ncol(.))),
-      new = paste0(
-        c("AskPrice", "AskSize", "BidPrice", "BidSize"),
-        rep(seq_len(ncol(.) / 4), each = 4)
-      )
+  messages_filename <- grep(pattern = "message", x = extracted_files, value = TRUE)
+  messages_raw <- read_csv(messages_filename,
+                           col_names = c("ts", "type", "order_id", "m_size", "m_price", "direction", "null"),
+                           col_types = cols(
+                             ts = col_double(),
+                             type = col_integer(),
+                             order_id = col_integer(),
+                             m_size = col_double(),
+                             m_price = col_double(),
+                             direction = col_integer(),
+                             null = col_skip()
+                           )
+  ) |>
+    mutate(
+      ts = as.POSIXct(ts, origin = as.Date(date), tz = "GMT", format = "%Y-%m-%d %H:%M:%OS6"),
+      m_price = m_price / 10000
     )
 
+  # Modify orderbook file
+  orderbook_filename <- grep(pattern = "orderbook", x = extracted_files, value = TRUE)
+  orderbook_raw <- read_csv(orderbook_filename,
+                            col_names = paste(rep(c("ask_price", "ask_size", "bid_price", "bid_size"), level),
+                                              rep(1:level, each = 4),
+                                              sep = "_"
+                            ),
+                            cols(.default = col_double())
+  ) |>
+    mutate_at(vars(contains("price")), ~ . / 10000)
   # Merge files
+  orderbook <- bind_cols(messages_raw, orderbook_raw)
 
-  data.table::fwrite(
-    x = cbind(message_file, orderbook_file),
-    file = glue::glue("{path}/{symbol}_{origin}_{ncol(orderbook_file)/4}.csv"),
-    showProgress = FALSE
-  )
+  store_output <- glue::glue("{path}/{symbol}_{date}_{ncol(orderbook_raw)/4}.csv.gz")
+  write_csv(orderbook, store_output, "gz")
 
   if (isTRUE(clean_up)) unlink(extracted_files, recursive = TRUE)
 }
 
-.process_highfrequency <- function(path, clean_up = TRUE) {
+#' .process_clean
+#'
+#'
+#' @param path The path of the file#'
+#' @return blablabla
 
-  #' convert message to highfrequency::sampleTDataRaw format:
-  #' The SYMBOL column contains a string identifying the symbol of the trade;
-  #' the DT column  represents date and time and contains a POSIXct timestamp;
-  #' the PRICE column contains the prices of the trades;
-  #' the SIZE column shows the number of shares traded;
-  #' the COND column contains the sales condition of the corresponding trade as defined by the NYSE
-  #' the characters F, T, and I in our data example above indicate the trade being an intermarket sweep order, an extended hours trade, and/or an odd lot trade respectively.
-  #' the EX column shows the exchange of the trade, and CORR is a correction indicator.
-  #'
-  extracted_files <- list.files(path, full.names = TRUE)
+.process_clean <- function(path) {
+  orderbook <- read_csv(list.files(path = path, full.names = TRUE),
+                        col_types = cols(
+                          ts = col_datetime(format = ""),
+                          type = col_double(),
+                          order_id = col_double(),
+                          m_size = col_double(),
+                          m_price = col_double(),
+                          direction = col_double(),
+                          ask_price_1 = col_double(),
+                          ask_size_1 = col_double(),
+                          bid_price_1 = col_double(),
+                          bid_size_1 = col_double()
+                        ))
 
-  stopifnot(length(extracted_files) > 0)
+  # Did a trading halt happen? ----
+  halt_index <- orderbook |>
+    filter(type == 7 & direction == -1 & m_price == -1 / 10000 | type == 7 & direction == -1 & m_price == 1 / 10000)
 
-  symbol <- gsub("_.*", "", basename(extracted_files))[1]
+  while (nrow(halt_index) > 1) {
+    # Filter out messages that occurred in between trading halts
+    cat("Trading halt detected")
+    orderbook <- orderbook |>
+      filter(ts < halt_index$ts[1] | ts > halt_index$ts[2])
+    halt_index <- halt_index |> filter(row_number() > 2)
+  }
 
-  origin <- gsub(".*[_](\\d+-\\d+-\\d+)[_].*", "\\1", basename(extracted_files))[1]
+  # Opening and closing auction ----
+  # Discard everything before type 6 & ID -1 and everything after type 6 & ID -2
 
-  lvl <- grep(pattern = "orderbook", x = extracted_files, value = TRUE) %>%
-    basename() %>%
-    gsub(pattern = ".*_", replacement = "") %>%
-    readr::parse_number()
+  opening_auction <- orderbook |>
+    filter(
+      type == 6,
+      order_id == -1
+    ) |>
+    pull(ts)
 
-  tick_data_raw <- data.table::fread(
-    input = grep(pattern = "message", x = extracted_files, value = TRUE),
-    colClasses = c(rep("double", 6), "NULL"),
-    showProgress = FALSE
-  ) %>%
-    data.table::setnames(
-      old = paste0("V", seq_len(6)),
-      new = c("Time", "EventType", "OrderId", "MarketSize", "MarketPrice", "Direction")
-    ) %>%
-    .[, Time := as.POSIXct(Time, origin = as.Date(origin), tz = "GMT", format = "%Y-%m-%d %H:%M:%OS6")] %>%
-    .[, MarketPrice := MarketPrice / 10000]
+  closing_auction <- orderbook |>
+    filter(
+      type == 6,
+      order_id == -2
+    ) |>
+    pull(ts)
 
-  purrr::map2(
-    split(seq_len(4*lvl), cut(seq_len(4*lvl), lvl, labels = FALSE)),
-    seq_len(lvl),
-    ~ {
-      dt <- data.table::fread(
-        input = grep(pattern = "orderbook", x = extracted_files, value = TRUE),
-        showProgress = FALSE,
-        colClasses = ifelse(seq_len(4*lvl) %in% .x, "double", "NULL")
-      ) %>%
-        .[, .(.SD[, rep(c(TRUE, FALSE), ncol(.) / 2), with = FALSE] / 10000,
-              .SD[, rep(c(FALSE, TRUE), ncol(.) / 2), with = FALSE])] %>%
-        data.table::setcolorder(neworder = paste0("V", .x)) %>%
-        data.table::setnames(
-          old = paste0("V", .x),
-          new = c("OFR", "OFRSIZ", "BID", "BIDSIZ")
-        )
+  if (length(opening_auction) != 1) {
+    opening_auction <- orderbook |>
+      select(ts) |>
+      head(1) |>
+      pull(ts) - seconds(0.1)
+  }
+  if (length(closing_auction) != 1) {
+    closing_auction <- orderbook |>
+      select(ts) |>
+      tail(1) |>
+      pull(ts) + seconds(0.1)
+  }
 
-      dt$DT <- tick_data_raw$Time
-      dt$SYMBOL <- symbol
+  orderbook <- orderbook |> filter(ts > opening_auction & ts < closing_auction)
+  orderbook <- orderbook |> filter(type != 6 & type != 7)
 
-      data.table::setcolorder(
-        dt,
-        neworder = c("DT", "BID", "BIDSIZ", "OFR", "OFRSIZ", "SYMBOL")
-      )
+  # Replace "empty" slots in orderbook (0 volume) with NA prices ----
+  orderbook <- orderbook |>
+    mutate(
+      across(contains("bid_price"), ~ replace(., . < 0, NA)),
+      across(contains("ask_price"), ~ replace(., . >= 999999, NA))
+    )
 
-      data.table::fwrite(
-        x =  dt[tick_data_raw$EventType %in% c(4, 5), ],
-        file = glue::glue("{path}/{symbol}_{origin}_{.y}_QDataRaw.csv"),
-        showProgress = FALSE
-      )
+  # Remove crossed orderbook observations ----
+  orderbook <- orderbook |>
+    filter(ask_price_1 > bid_price_1)
 
-    }
+  # Merge transactions with unique time stamp ----
+  trades <- orderbook |>
+    filter(type == 4 | type == 5) |>
+    select(ts:direction)
+
+  trades <- inner_join(trades,
+                       orderbook |>
+                         group_by(ts) |>
+                         filter(row_number() == 1) |>
+                         ungroup() |>
+                         transmute(ts,
+                                   ask_price_1,
+                                   bid_price_1,
+                                   midquote = ask_price_1 / 2 + bid_price_1 / 2,
+                                   lag_midquote = lag(midquote)
+                         ),
+                       by = "ts"
   )
 
-  data.table::fwrite(
-    x = tick_data_raw[EventType %in% c(4, 5), ] %>%
-      .[, .(Time, MarketSize, MarketPrice)] %>%
-      .[, SYMBOL := symbol] %>%
-      data.table::setnames(
-        old = c("Time", "MarketSize", "MarketPrice"),
-        new = c("DT", "SIZE", "PRICE")
-      ),
-    file = glue::glue("{path}/{symbol}_{origin}_{lvl}_TDataRaw.csv"),
-    showProgress = FALSE
+  trades <- trades |>
+    mutate(direction = case_when(
+      type == 5 & m_price < lag_midquote ~ 1, # lobster convention: direction = 1 if executed against a limit buy order
+      type == 5 & m_price > lag_midquote ~ -1,
+      type == 4 ~ as.double(direction),
+      TRUE ~ as.double(NA)
+    ))
+
+  # Aggregate transactions with size and volume weighted price
+  trade_aggregated <- trades |>
+    group_by(ts) |>
+    summarise(
+      type = last(type),
+      order_id = NA,
+      m_price = sum(m_price * m_size) / sum(m_size),
+      m_size = sum(m_size),
+      direction = last(direction)
+    )
+
+  # Merge trades with last observed orderbook snapshot
+  trade_aggregated <- inner_join(trade_aggregated,
+                                 orderbook |>
+                                   select(ts,
+                                          ask_price_1:last_col()) |>
+                                   group_by(ts) |>
+                                   filter(row_number() == n()),
+                                 by = "ts"
   )
 
+  orderbook <- orderbook |>
+    filter(
+      type != 4,
+      type != 5
+    ) |>
+    bind_rows(trade_aggregated) |>
+    arrange(ts) |>
+    mutate(direction = if_else(type == 4 | type == 5,
+                               direction,
+                               as.double(NA)))
 
-
-  #' split the data into:
-  #' 1. {symbol}_{date}_trade_{level}_raw - data from message
-  #' 2. {symbol}_{date}_quote_{level}_raw - data from orderbook
-  #' for each level within the orderbook file
-  #'
-  #' convert the file structure to:
-  #' 1. highfrequency::sampleTDataRaw
-  #' 2. highfrequency::sampleQDataRaw
-  #' formats.
-  #'
-  #' think about:
-  #' - mapping LOBSTER EventType to NYSE exchange of the trade indicator
-  #' - not sure how to read the CORR (correction indicator)
-  #'
-  #' next step:
-  #' - build an R6 wrapper to clean and aggregate all data files within
-  #' the corresponding request directory
+  return(orderbook)
 }
