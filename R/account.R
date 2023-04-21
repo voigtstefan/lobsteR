@@ -2,13 +2,11 @@
 #'
 #' @param login user email address
 #' @param pwd user password
-#'
+#' @export
+#' @importFrom httr add_headers
+#' @importFrom rvest session html_form html_form_set session_submit
+#' @importFrom assertthat are_equal
 #' @return List with session data.
-#' \itemize{
-#'   \item valid [logical]
-#'   \item session [rvest session]
-#'   \item submission [rvest session]
-#' }
 .account_login <- function(login, pwd) {
 
   session <- rvest::session(url = "https://lobsterdata.com/SignIn.php")
@@ -39,7 +37,8 @@
 #' Fetch LOBSTER archive data
 #'
 #' @param account_login output of the [.account_login] function
-#'
+#' @importFrom rvest session_jump_to html_table html_nodes html_attr
+#' @export
 #' @return Tibble with archive data.
 #' \itemize{
 #'   \item symbol [character]

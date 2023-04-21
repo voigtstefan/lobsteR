@@ -1,6 +1,8 @@
+utils::globalVariables(c("type", "direction", "m_price", "ts", "order_id", "seconds", "ask_price_1", "bid_price_1", "midquote", "m_size", "ts", "m_price","level","start_date"))
+
 #' .process_collect
-#'
-#'
+#' @export
+#' @importFrom glue glue
 #' @param path The path of the files
 #' @param clean_up Remove the raw files after collecting lobsterdata
 #'
@@ -10,9 +12,7 @@
   extracted_files <- list.files(path, full.names = TRUE)
 
   stopifnot(length(extracted_files) > 0)
-
   symbol <- gsub("_.*", "", basename(extracted_files))[1]
-
   date <- gsub(".*[_](\\d+-\\d+-\\d+)[_].*", "\\1", basename(extracted_files))[1]
 
   # Modify message file
@@ -30,7 +30,8 @@
                            )
   ) |>
     mutate(
-      ts = as.POSIXct(ts, origin = as.Date(date), tz = "GMT", format = "%Y-%m-%d %H:%M:%OS6"),
+      ts = as.POSIXct(ts, origin = as.Date(date), tz = "GMT",
+                      format = "%Y-%m-%d %H:%M:%OS6"),
       m_price = m_price / 10000
     )
 
@@ -55,8 +56,10 @@
 
 #' .process_clean
 #'
-#'
-#' @param path The path of the file#'
+#' @import readr
+#' @import dplyr
+#' @importFrom utils head tail
+#' @param path The path of the file
 #' @return blablabla
 
 .process_clean <- function(path) {

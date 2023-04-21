@@ -1,3 +1,6 @@
+#' Create a LOBSTER query
+#'
+#' @export
 .request_query <- function(symbol, start_date, end_date, level) {
 
   stopifnot(is.character(symbol))
@@ -24,6 +27,9 @@
   )
 }
 
+#' Validate a request
+#' @export
+
 .request_validate <- function(account_archive, request_query) {
 
   holiday <- sapply(request_query$start_date, data.table::year) |>
@@ -38,6 +44,9 @@
 
   dplyr::anti_join(res, account_archive, by = colnames(res))
 }
+
+#' Submit a request
+#' @export
 
 .request_submit <- function(account_login, request_validate) {
 
@@ -62,13 +71,15 @@
 
 }
 
+#' Download requested data
+#' @export
 .request_download <- function(account_login, path, id) {
 
   account_archive <- lobsteR:::.account_archive(account_login = account_login)
 
   download <- account_archive[account_archive$id == id, ]$download
 
-  pwalk(account_archive)session <- rvest::session_jump_to(account_login$submission, download)$response
+  session <- rvest::session_jump_to(account_login$submission, download)$response
 
   proc <- callr::r_bg(
     function(content, filename, save_as) {
