@@ -1,6 +1,7 @@
 # Connect to Lobster using your credentials
+library(lobsteR)
 
-account_login <- lobsteR:::.account_login(
+account_login <- account_login(
   login = Sys.getenv("user"),
   pwd = Sys.getenv("pwd")
 )
