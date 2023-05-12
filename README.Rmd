@@ -1,21 +1,28 @@
+---
+output: github_document
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
 
 # lobsteR
 
 <!-- badges: start -->
 <!-- badges: end -->
 
-The goal of lobsteR is to provide a tidy framework to request data from
-lobsterdata.com, to download, unzip, and clean the data. The package
-focuses on the core functionalities required to get LOBSTER data ready
-fast, for subsequent typical high-frequency econometrics applications,
-we refer to the `highfrequency` package.
+The goal of lobsteR is to provide a tidy framework to request data from lobsterdata.com, to download, unzip, and clean the data. The package focuses on the core functionalities required to get LOBSTER data ready fast, for   subsequent typical high-frequency econometrics applications, we refer to the `highfrequency` package.
 
 ## Installation
 
-You can install the development version of lobsteR from
-[GitHub](https://github.com/) with:
+You can install the development version of lobsteR from [GitHub](https://github.com/) with:
 
-``` r
+```{r}
 # install.packages("devtools")
 devtools::install_github("voigtstefan/lobsteR")
 ```
@@ -24,13 +31,13 @@ devtools::install_github("voigtstefan/lobsteR")
 
 This is a basic example which shows you how to solve a common problem:
 
-``` r
+```{r example}
 library(lobsteR)
 ```
 
 Connect to Lobster using your credentials
 
-``` r
+```{r}
 account_login <- account_login(
   login = Sys.getenv("user"),
   pwd = Sys.getenv("pwd")
@@ -39,7 +46,7 @@ account_login <- account_login(
 
 Create a request for data from lobster
 
-``` r
+```{r}
 data_request <- request_query(
   symbol = c("META"),
   start_date = Sys.Date() - 100,
@@ -52,10 +59,9 @@ request_submit(account_login = account_login,
                request_validate = data_request)
 ```
 
-Inspect your archive: Once lobsterdata.com provides your data, you can
-download
+Inspect your archive: Once lobsterdata.com provides your data, you can download
 
-``` r
+```{r}
 account_archive <- account_archive(account_login = account_login)
 
 request_download(
