@@ -3,7 +3,7 @@ Package: lobsteR
 Title: Download data from lobsterdata.com
 Version: 0.1.0
 Authors@R: c(
-    person("Karol", "Kulma", , "first.last@example.com", role = c("aut", "cre")),
+    person("Karol", "Kulma", , "kulmakarol@gmail.com", role = c("aut", "cre")),
     person("Stefan", "Voigt", , "stefan.voigt@econ.ku.dk", role = "aut")
   )
 Description: Tools to request data from lobsterdata.com, to download,
