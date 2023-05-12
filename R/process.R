@@ -1,13 +1,14 @@
 utils::globalVariables(c("type", "direction", "m_price", "ts", "order_id", "seconds", "ask_price_1", "bid_price_1", "midquote", "m_size", "ts", "m_price","level","start_date"))
 
-#' .process_collect
+#' process_collect
 #' @export
 #' @importFrom glue glue
+#'
 #' @param path The path of the files
 #' @param clean_up Remove the raw files after collecting lobsterdata
 #'
 #' @return blablabla
-.process_collect <- function(path, clean_up = TRUE) {
+process_collect <- function(path, clean_up = TRUE) {
 
   extracted_files <- list.files(path, full.names = TRUE)
 
@@ -54,15 +55,17 @@ utils::globalVariables(c("type", "direction", "m_price", "ts", "order_id", "seco
   if (isTRUE(clean_up)) unlink(extracted_files, recursive = TRUE)
 }
 
-#' .process_clean
+#' process_clean
 #'
 #' @import readr
 #' @import dplyr
 #' @importFrom utils head tail
+#'
 #' @param path The path of the file
+#'
 #' @return blablabla
 
-.process_clean <- function(path) {
+process_clean <- function(path) {
   orderbook <- read_csv(list.files(path = path, full.names = TRUE),
                         col_types = cols(
                           ts = col_datetime(format = ""),

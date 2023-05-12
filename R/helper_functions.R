@@ -6,6 +6,7 @@
 #' @param bp Basis points from best quote
 #'
 #' @return blablabla
+#'
 compute_depth <- function(orderbook,
                           side = "bid",
                           bp = 0) {

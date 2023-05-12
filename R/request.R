@@ -1,7 +1,12 @@
 #' Create a LOBSTER query
 #'
+#' @param symbol
+#' @param start_date
+#' @param end_date
+#' @param level
+#'
 #' @export
-.request_query <- function(symbol, start_date, end_date, level) {
+request_query <- function(symbol, start_date, end_date, level) {
 
   stopifnot(is.character(symbol))
   stopifnot(assertthat::is.date(start_date))
@@ -28,9 +33,12 @@
 }
 
 #' Validate a request
+#'
+#' @param request_query
+#' @param account_archive
+#'
 #' @export
-
-.request_validate <- function(account_archive, request_query) {
+request_validate <- function(request_query, account_archive = NULL) {
 
   holiday <- sapply(request_query$start_date, data.table::year) |>
     unique() |>
@@ -42,13 +50,20 @@
     !(as.integer(format(start_date, "%w")) %in% c(0,6) | start_date %in% holiday)
   )
 
-  dplyr::anti_join(res, account_archive, by = colnames(res))
+  if(!is.null(account_archive)){
+    res <- dplyr::anti_join(res, account_archive, by = colnames(res))
+  }
+  return(res)
+
 }
 
 #' Submit a request
+#'
+#' @param account_login
+#' @param request_validate
+#'
 #' @export
-
-.request_submit <- function(account_login, request_validate) {
+request_submit <- function(account_login, request_validate) {
 
   purrr::pwalk(
     request_validate,
@@ -72,10 +87,15 @@
 }
 
 #' Download requested data
+#'
+#' @param account_login
+#' @param path
+#' @param id
+#'
 #' @export
-.request_download <- function(account_login, path, id) {
+request_download <- function(account_login, path, id) {
 
-  account_archive <- lobsteR:::.account_archive(account_login = account_login)
+  account_archive <- account_archive(account_login = account_login)
 
   download <- account_archive[account_archive$id == id, ]$download
 
