@@ -7,7 +7,7 @@
 account_archive(account_login)
 }
 \arguments{
-\item{account_login}{output of the \link{.account_login} function}
+\item{account_login}{output of the \link{account_login} function}
 }
 \value{
 Tibble with archive data.

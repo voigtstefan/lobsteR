@@ -1,33 +1,34 @@
 #' Log into your LOBSTER account
 #'
-#' @param login user email address
-#' @param pwd user password
+#' @param login Your unique account user email address
+#' @param pwd Your unique account password
 #'
 #' @export
 #' @importFrom httr add_headers
 #' @importFrom rvest session html_form html_form_set session_submit
 #' @importFrom assertthat are_equal
-#' @return List with session data.
+#' @return An account object which contains the relevant session data.
 account_login <- function(login, pwd) {
 
-  session <- rvest::session(url = "https://lobsterdata.com/SignIn.php")
+  session <- session(url = "https://lobsterdata.com/SignIn.php")
 
-  form <- rvest::html_form(x = session)[[1]] |>
-    rvest::html_form_set(login = login,
+  form <- html_form(x = session)[[1]] |>
+    html_form_set(login = login,
                          pwd = pwd)
 
-  submission <- rvest::session_submit(
+  submission <- session_submit(
     x = session,
     form = form,
     submit = "sign in",
-    httr::add_headers('x-requested-with' = 'XMLHttpRequest')
+    add_headers('x-requested-with' = 'XMLHttpRequest')
   )
 
-  valid <- assertthat::are_equal(
+  valid <- are_equal(
     x = submission$url,
     y = "https://lobsterdata.com/requestdata.php"
   )
 
+  if(valid){cat("# Login on lobsterdata.com successful")}
   list(
     valid = valid,
     session = session,
@@ -37,7 +38,7 @@ account_login <- function(login, pwd) {
 
 #' Fetch LOBSTER archive data
 #'
-#' @param account_login output of the [.account_login] function
+#' @param account_login output of the [account_login] function
 #'
 #' @importFrom rvest session_jump_to html_table html_nodes html_attr
 #' @export
@@ -55,19 +56,19 @@ account_archive <- function(account_login) {
 
   stopifnot(account_login$valid)
 
-  session <- rvest::session_jump_to(
+  session <- session_jump_to(
     x = account_login$submission,
     url = "https://lobsterdata.com/data_archive.php"
   )
 
-  archive <- rvest::html_table(session, fill = TRUE)[[1]]
+  archive <- html_table(session, fill = TRUE)[[1]]
 
   archive$Name <- archive$Delete <- NULL
 
   colnames(archive) <- c("symbol", "start_date", "end_date", "level", "size")
 
-  archive$download <- rvest::html_nodes(session, "td:nth-child(2) a") |>
-    rvest::html_attr("href") |>
+  archive$download <- html_nodes(session, "td:nth-child(2) a") |>
+    html_attr("href") |>
     grep("download", x = _, value = TRUE) |>
     paste0("https://lobsterdata.com/", ... = _)
 
@@ -76,6 +77,6 @@ account_archive <- function(account_login) {
   class(archive$id) <- class(archive$level) <- class(archive$size) <- "integer"
   archive$start_date <- as.Date(archive$start_date)
   archive$end_date <- as.Date(archive$end_date)
-
-  archive[order(archive$id, decreasing = TRUE), ]
+  archive <- archive[archive$size != 0, ]
+  archive[order(archive$id, decreasing = TRUE), c(ncol(archive), 1:(ncol(archive)-1))]
 }

@@ -7,12 +7,12 @@
 account_login(login, pwd)
 }
 \arguments{
-\item{login}{user email address}
+\item{login}{Your unique account user email address}
 
-\item{pwd}{user password}
+\item{pwd}{Your unique account password}
 }
 \value{
-List with session data.
+An account object which contains the relevant session data.
 }
 \description{
 Log into your LOBSTER account
