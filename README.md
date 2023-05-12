@@ -28,7 +28,7 @@ This is a basic example which shows you how to solve a common problem:
 library(lobsteR)
 ```
 
-Connect to Lobster using your credentials
+Connect to Lobster using your credentials.
 
 ``` r
 account_login <- account_login(
