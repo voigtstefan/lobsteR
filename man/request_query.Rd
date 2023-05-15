@@ -4,7 +4,30 @@
 \alias{request_query}
 \title{Create a LOBSTER query}
 \usage{
-request_query(symbol, start_date, end_date, level)
+request_query(
+  symbol,
+  start_date,
+  end_date,
+  level,
+  validate = TRUE,
+  account_archive = NULL
+)
+}
+\arguments{
+\item{symbol}{One ticker symbol for which you request data from lobsterdata.com}
+
+\item{start_date}{Start date of your request}
+
+\item{end_date}{End date of your request}
+
+\item{level}{Required number of order book snapshot levels}
+
+\item{validate}{TRUE Screens the requested dates for holidays if requested.}
+
+\item{account_archive}{NULL If provided the request is checked against already existing data in the archive.}
+}
+\value{
+A tibble with an overview of the requested trading days.
 }
 \description{
 Create a LOBSTER query

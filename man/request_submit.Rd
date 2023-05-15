@@ -4,7 +4,15 @@
 \alias{request_submit}
 \title{Submit a request}
 \usage{
-request_submit(account_login, request_validate)
+request_submit(account_login, request)
+}
+\arguments{
+\item{account_login}{An account object which contains the relevant session data.}
+
+\item{request}{A tibble with the requested trading days.}
+}
+\value{
+A tibble with an overview of the requested trading days.
 }
 \description{
 Submit a request
