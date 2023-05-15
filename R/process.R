@@ -1,73 +1,112 @@
-utils::globalVariables(c("type", "direction", "m_price", "ts", "order_id", "seconds", "ask_price_1", "bid_price_1", "midquote", "m_size", "ts", "m_price","level","start_date"))
+utils::globalVariables(c("type",
+                         "direction",
+                         "m_price",
+                         "ts",
+                         "order_id",
+                         "seconds",
+                         "ask_price_1",
+                         "bid_price_1",
+                         "midquote",
+                         "m_size",
+                         "m_price",
+                         "level"))
 
-#' process_collect
+#' Processes lobster files and returns a clean, zipped csv file
 #' @export
 #' @importFrom glue glue
-#'
+#' @importFrom readr read_csv write_csv col_integer col_skip col_double col_datetime cols
+#' @importFrom tidyr pivot_wider
 #' @param path The path of the files
-#' @param clean_up Remove the raw files after collecting lobsterdata
+#' @param clean_up TRUE Remove the raw files after collecting lobsterdata
 #'
-#' @return blablabla
-process_collect <- function(path, clean_up = TRUE) {
+#' @return NULL
+process_data <- function(path, clean_up = TRUE) {
 
-  extracted_files <- list.files(path, full.names = TRUE)
+  files <- list.files(path, full.names = TRUE)
 
-  stopifnot(length(extracted_files) > 0)
-  symbol <- gsub("_.*", "", basename(extracted_files))[1]
-  date <- gsub(".*[_](\\d+-\\d+-\\d+)[_].*", "\\1", basename(extracted_files))[1]
-  level <- gsub(".*[_](\\d+-\\d+-\\d+)[_].*", "\\2", basename(extracted_files))[1]
-
-  # Modify message file
-  messages_filename <- grep(pattern = "message", x = extracted_files, value = TRUE)
-  messages_raw <- read_csv(messages_filename,
-                           col_names = c("ts", "type", "order_id", "m_size", "m_price", "direction", "null"),
-                           col_types = cols(
-                             ts = col_double(),
-                             type = col_integer(),
-                             order_id = col_integer(),
-                             m_size = col_double(),
-                             m_price = col_double(),
-                             direction = col_integer(),
-                             null = col_skip()
-                           )
+  existing_files <- tibble(
+    files = files,
+    class = gsub("(.*)_(.*)_.*0000_.*0000_(.*)_(.*).csv", "\\3", basename(files)),
+    ticker = gsub("(.*)_(.*)_.*0000_.*0000_.*_(.*).csv", "\\1", basename(files)),
+    date = gsub("(.*)_(.*)_.*0000_.*0000_.*_(.*).csv", "\\2", basename(files)),
+    level = gsub("(.*)_(.*)_.*0000_.*0000_.*_(.*).csv", "\\3", basename(files))
   ) |>
+    pivot_wider(names_from = class, values_from = files) |>
     mutate(
-      ts = as.POSIXct(ts, origin = as.Date(date), tz = "GMT",
-                      format = "%Y-%m-%d %H:%M:%OS6"),
-      m_price = m_price / 10000
+      level = as.numeric(level),
+      date = as.Date(date)
     )
 
-  # Modify orderbook file
-  orderbook_filename <- grep(pattern = "orderbook", x = extracted_files, value = TRUE)
-  orderbook_raw <- read_csv(orderbook_filename,
-                            col_names = paste(rep(c("ask_price", "ask_size", "bid_price", "bid_size"), level),
-                                              rep(1:level, each = 4),
-                                              sep = "_"
-                            ),
-                            cols(.default = col_double())
-  ) |>
-    mutate_at(vars(contains("price")), ~ . / 10000)
-  # Merge files
-  orderbook <- bind_cols(messages_raw, orderbook_raw)
+  stopifnot(nrow(existing_files) > 0)
 
-  store_output <- glue::glue("{path}/{symbol}_{date}_{ncol(orderbook_raw)/4}.csv.gz")
-  write_csv(orderbook, store_output, "gz")
+  for(n in 1:nrow(existing_files)){
+    ticker <- existing_files |>
+      filter(row_number() == n) |>
+      pull(ticker)
+    date <- existing_files |>
+      filter(row_number() == n) |>
+      pull(date)
+    level <- existing_files |>
+      filter(row_number() == n) |>
+      pull(level)
+    messages_filename <-  existing_files |>
+      filter(row_number() == n) |>
+      pull(message)
+    orderbook_filename <-  existing_files |>
+      filter(row_number() == n) |>
+      pull(orderbook)
 
-  if (isTRUE(clean_up)) unlink(extracted_files, recursive = TRUE)
+    messages_raw <- read_csv(messages_filename,
+                             col_names = c("ts", "type", "order_id", "m_size", "m_price", "direction", "null"),
+                             col_types = cols(
+                               ts = col_double(),
+                               type = col_integer(),
+                               order_id = col_integer(),
+                               m_size = col_double(),
+                               m_price = col_double(),
+                               direction = col_integer(),
+                               null = col_skip()
+                             )
+    ) |>
+      mutate(
+        ts = as.POSIXct(ts, origin = as.Date(date), tz = "GMT",
+                        format = "%Y-%m-%d %H:%M:%OS6"),
+        m_price = m_price / 10000
+      )
+
+    # Modify orderbook file
+    orderbook_raw <- read_csv(orderbook_filename,
+                              col_names = paste(rep(c("ask_price", "ask_size", "bid_price", "bid_size"), level),
+                                                rep(1:level, each = 4),
+                                                sep = "_"
+                              ),
+                              cols(.default = col_double())
+    ) |>
+      mutate_at(vars(contains("price")), ~ . / 10000)
+    # Merge files
+    orderbook <- bind_cols(messages_raw, orderbook_raw)
+
+    store_output <- glue("{path}/{ticker}_{date}_{level}.csv.gz")
+    write_csv(orderbook, store_output, "gz")
+
+    if (isTRUE(clean_up)) unlink(c(messages_filename, orderbook_filename), recursive = TRUE)
+
+  }
 }
 
 #' process_clean
 #'
-#' @import readr
+#' @importFrom readr read_csv
 #' @import dplyr
 #' @importFrom utils head tail
-#'
+#' @importFrom readr cols col_datetime col_double
+#' @importFrom dplyr row_number
 #' @param path The path of the file
-#'
+#' @export
 #' @return blablabla
 
-process_clean <- function(path) {
-  orderbook <- read_csv(list.files(path = path, full.names = TRUE),
+clean_data <- function(path) {
+  orderbook <- read_csv(path,
                         col_types = cols(
                           ts = col_datetime(format = ""),
                           type = col_double(),

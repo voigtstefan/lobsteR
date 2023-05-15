@@ -59,7 +59,7 @@ request_query <- function(symbol, start_date, end_date, level, validate = TRUE, 
 
   res <- subset(
     request_query,
-    !(as.integer(format(start_date, "%w")) %in% c(0,6) | start_date %in% holiday)
+    !(as.integer(format(request_query$start_date, "%w")) %in% c(0,6) | request_query$start_date %in% holiday)
   )
 
   if(!is.null(account_archive)){
