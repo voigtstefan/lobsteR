@@ -28,49 +28,53 @@ You can install the development version of lobsteR from [GitHub](https://github.
 devtools::install_github("voigtstefan/lobsteR")
 ```
 
-## Example
+## Example: Request and download data from lobsterdata.com
 
-This is a basic example which shows you how to solve a common problem:
-
-```{r example}
+```{r}
 library(lobsteR)
 ```
 
-Connect to Lobster using your credentials
+With ´lobsteR´ you can connect easily connect with lobsterdata.com using your own credentials.
 
 ```{r}
-account_login <- account_login(
-  login = Sys.getenv("user"),
-  pwd = Sys.getenv("pwd")
+lobster_login <- account_login(
+  login = Sys.getenv("user"), # Replace with your own account mail adress
+  pwd = Sys.getenv("pwd") # Replace with your own account password
 )
 ```
 
-Create a request for data from lobster
-
+Next, we request some data from lobsterdata.com, e.g., message-level data from *META* for the period from May 1st, 2023 until May 3rd, 2023. ´level´ corresponds to the requested number of orderbook snapshot levels. 
 ```{r}
 data_request <- request_query(
-  symbol = c("META"),
-  start_date = Sys.Date() - 100,
-  end_date = Sys.Date() - 98,
-  level = 1
-) |>
-  request_validate()
+  symbol = "META",
+  start_date = "2023-05-01",
+  end_date = "2023-05-03",
+  level = 1)
+
+data_request
 
 request_submit(account_login = account_login,
-               request_validate = data_request)
+               request = data_request)
 ```
 
-Inspect your archive: Once lobsterdata.com provides your data, you can download
+After submitting the request, lobsterdata.com will work on providing the order book snapshots. Depending on the number of messages to process, this may take some time. Once done, the requested data is available in your account archive - ready to download!
 
 ```{r}
-account_archive <- account_archive(account_login = account_login)
+lobster_archive <- account_archive(account_login = account_login)
+```
 
-request_download(
-  account_login = account_login,
-  path = "data",
-  id = 333308
-)
-lobsteR:::.process_collect(path = "data/333254", clean_up = FALSE)
+When downloading, we automatically unzip the data (this can be omitted using `unzip = FALSE´) 
+```{r}
+data_download(
+  requested_data = lobster_archive,
+  account_login = lobster_login,
+  path = "../tmp_data")
+```
 
+```{r}
+process_collect(path = "../tmp_data", clean_up = TRUE)
+```
+
+```{r}
 clean_orderbook <- lobsteR:::.process_clean(path = "data/333254")
 ```
