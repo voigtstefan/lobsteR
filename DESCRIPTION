@@ -19,13 +19,13 @@ Imports:
     assertthat,
     callr,
     dplyr,
-    lubridate,
     glue,
     httr,
+    lubridate,
     purrr,
     readr,
-    rlang,
     rvest,
+    tidyr,
     timeDate
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
