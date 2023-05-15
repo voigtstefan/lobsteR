@@ -19,6 +19,7 @@ Imports:
     assertthat,
     callr,
     dplyr,
+    lubridate,
     glue,
     httr,
     purrr,
