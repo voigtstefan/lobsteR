@@ -15,6 +15,7 @@ process_collect <- function(path, clean_up = TRUE) {
   stopifnot(length(extracted_files) > 0)
   symbol <- gsub("_.*", "", basename(extracted_files))[1]
   date <- gsub(".*[_](\\d+-\\d+-\\d+)[_].*", "\\1", basename(extracted_files))[1]
+  level <- gsub(".*[_](\\d+-\\d+-\\d+)[_].*", "\\2", basename(extracted_files))[1]
 
   # Modify message file
   messages_filename <- grep(pattern = "message", x = extracted_files, value = TRUE)
