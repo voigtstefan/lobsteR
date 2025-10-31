@@ -2,18 +2,39 @@
 % Please edit documentation in R/account.R
 \name{account_login}
 \alias{account_login}
-\title{Log into your LOBSTER account}
+\title{Log in to a LOBSTER account and start an authenticated session}
 \usage{
 account_login(login, pwd)
 }
 \arguments{
-\item{login}{Your unique account user email address}
+\item{login}{character(1) Email address associated with the LOBSTER account.}
 
-\item{pwd}{Your unique account password}
+\item{pwd}{character(1) Account password.}
 }
 \value{
-An account object which contains the relevant session data.
+A named list with components:
+\describe{
+\item{valid}{logical(1) — TRUE when authentication succeeded.}
+\item{session}{rvest session object used for further navigation.}
+\item{submission}{rvest response returned after the sign-in form was submitted.}
+}
 }
 \description{
-Log into your LOBSTER account
+Establishes a web session on lobsterdata.com using rvest and attempts to
+authenticate with the provided credentials. The returned object contains
+the rvest session and the form submission response; pass that object to
+\code{\link[=account_archive]{account_archive()}} to list available datasets for the account.
+}
+\details{
+The function submits the sign-in form using an AJAX header
+(x-requested-with: XMLHttpRequest) and confirms success by checking the
+redirect URL. Network connectivity and valid credentials are required.
+}
+\examples{
+\dontrun{
+acct <- account_login("you@example.com", "your-password")
+if (acct$valid) {
+  archive <- account_archive(acct)
+}
+}
 }

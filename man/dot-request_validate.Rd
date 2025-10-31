@@ -2,15 +2,26 @@
 % Please edit documentation in R/request.R
 \name{.request_validate}
 \alias{.request_validate}
-\title{Validate a request}
+\title{Validate a generated request (remove weekends, holidays, existing files)}
 \usage{
 .request_validate(request_query, account_archive = NULL)
 }
 \arguments{
-\item{request_query}{A tibble which states symbol, start_date, end_date, and level of the required data}
+\item{request_query}{data.frame A tibble produced by \code{\link[=request_query]{request_query()}}
+containing columns: symbol, start_date, end_date, level.}
 
-\item{account_archive}{NULL If provided, the validation filters out data which is already available in the account archive}
+\item{account_archive}{data.frame or tibble, optional When provided, rows
+present in the archive (matching all columns of \code{request_query}) are
+excluded from the validation result.}
+}
+\value{
+A filtered tibble containing only valid trading days that are not
+weekends, NYSE holidays, or already present in \code{account_archive}.
 }
 \description{
-Validate a request
+Internal helper used by \code{\link[=request_query]{request_query()}}. Removes weekend days (Saturday
+and Sunday) and NYSE holidays for the years present in \code{request_query}.
+When \code{account_archive} is supplied, rows that are already available in the
+archive are removed using a row-wise anti-join.
 }
+\keyword{internal}

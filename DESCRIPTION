@@ -4,7 +4,7 @@ Title: Download data from lobsterdata.com
 Version: 0.1.0
 Authors@R: c(
     person("Karol", "Kulma", , "kulmakarol@gmail.com", role = c("aut", "cre")),
-    person("Stefan", "Voigt", , "stefan.voigt@econ.ku.dk", role = "aut")
+    person("Stefan", "Voigt", , "stefan.voigt@econ.ku.dk", role = c("aut", "cph"))
   )
 Description: Tools to programmatically access, download and prepare high-frequency
     limit order book data from lobsterdata.com. The package provides functions
@@ -30,3 +30,9 @@ Imports:
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
+Suggests: 
+    testthat (>= 3.0.0),
+    xml2
+Config/testthat/edition: 3
+Depends: 
+    R (>= 4.2.0)

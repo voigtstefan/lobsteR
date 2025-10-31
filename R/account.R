@@ -1,13 +1,32 @@
-#' Log into your LOBSTER account
+#' Log in to a LOBSTER account and start an authenticated session
 #'
-#' @param login Your unique account user email address
-#' @param pwd Your unique account password
+#' Establishes a web session on lobsterdata.com using rvest and attempts to
+#' authenticate with the provided credentials. The returned object contains
+#' the rvest session and the form submission response; pass that object to
+#' [account_archive()] to list available datasets for the account.
 #'
+#' @param login character(1) Email address associated with the LOBSTER account.
+#' @param pwd character(1) Account password.
+#' @return A named list with components:
+#' \describe{
+#'   \item{valid}{logical(1) — TRUE when authentication succeeded.}
+#'   \item{session}{rvest session object used for further navigation.}
+#'   \item{submission}{rvest response returned after the sign-in form was submitted.}
+#' }
+#' @details The function submits the sign-in form using an AJAX header
+#' (x-requested-with: XMLHttpRequest) and confirms success by checking the
+#' redirect URL. Network connectivity and valid credentials are required.
+#' @examples
+#' \dontrun{
+#' acct <- account_login("you@example.com", "your-password")
+#' if (acct$valid) {
+#'   archive <- account_archive(acct)
+#' }
+#' }
 #' @export
 #' @importFrom httr add_headers
 #' @importFrom rvest session html_form html_form_set session_submit
 #' @importFrom assertthat are_equal
-#' @return An account object which contains the relevant session data.
 account_login <- function(login, pwd) {
   session <- session(url = "https://lobsterdata.com/SignIn.php")
 
@@ -36,22 +55,30 @@ account_login <- function(login, pwd) {
   )
 }
 
-#' Fetch LOBSTER archive data
+#' Fetch LOBSTER account archive index
 #'
-#' @param account_login output of the [account_login] function
+#' Retrieve the archive index page for an authenticated LOBSTER account and
+#' return a tibble describing available data files. Rows with a zero size are
+#' removed and the results are returned ordered by id (descending).
 #'
-#' @importFrom rvest session_jump_to html_table html_nodes html_attr
-#' @export
-#' @return Tibble with archive data.
-#' \itemize{
-#'   \item symbol [character]
-#'   \item start_date [Date]
-#'   \item end_date [Date]
-#'   \item level [integer]
-#'   \item size [integer]
-#'   \item download [character]
-#'   \item id [integer]
+#' @param account_login list Output from [account_login()]. Must have `valid == TRUE`.
+#' @return A tibble (data.frame) with columns:
+#' \describe{
+#'   \item{symbol}{character — Ticker symbol or instrument identifier.}
+#'   \item{start_date}{Date — Dataset start date.}
+#'   \item{end_date}{Date — Dataset end date.}
+#'   \item{level}{integer — Data level (e.g. L1, L2).}
+#'   \item{size}{integer — File size in bytes. Rows with size == 0 are dropped.}
+#'   \item{download}{character — Full URL to download the file.}
+#'   \item{id}{integer — Numeric id extracted from the download URL.}
 #' }
+#' @examples
+#' \dontrun{
+#' acct <- account_login("you@example.com", "your-password")
+#' archive_tbl <- account_archive(acct)
+#' }
+#' @export
+#' @importFrom rvest session_jump_to html_table html_nodes html_attr
 account_archive <- function(account_login) {
   stopifnot(account_login$valid)
 

@@ -2,25 +2,33 @@
 % Please edit documentation in R/account.R
 \name{account_archive}
 \alias{account_archive}
-\title{Fetch LOBSTER archive data}
+\title{Fetch LOBSTER account archive index}
 \usage{
 account_archive(account_login)
 }
 \arguments{
-\item{account_login}{output of the \link{account_login} function}
+\item{account_login}{list Output from \code{\link[=account_login]{account_login()}}. Must have \code{valid == TRUE}.}
 }
 \value{
-Tibble with archive data.
-\itemize{
-\item symbol \link{character}
-\item start_date \link[lubridate:date_utils]{lubridate::Date}
-\item end_date \link[lubridate:date_utils]{lubridate::Date}
-\item level \link{integer}
-\item size \link{integer}
-\item download \link{character}
-\item id \link{integer}
+A tibble (data.frame) with columns:
+\describe{
+\item{symbol}{character — Ticker symbol or instrument identifier.}
+\item{start_date}{Date — Dataset start date.}
+\item{end_date}{Date — Dataset end date.}
+\item{level}{integer — Data level (e.g. L1, L2).}
+\item{size}{integer — File size in bytes. Rows with size == 0 are dropped.}
+\item{download}{character — Full URL to download the file.}
+\item{id}{integer — Numeric id extracted from the download URL.}
 }
 }
 \description{
-Fetch LOBSTER archive data
+Retrieve the archive index page for an authenticated LOBSTER account and
+return a tibble describing available data files. Rows with a zero size are
+removed and the results are returned ordered by id (descending).
+}
+\examples{
+\dontrun{
+acct <- account_login("you@example.com", "your-password")
+archive_tbl <- account_archive(acct)
+}
 }

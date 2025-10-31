@@ -2,18 +2,25 @@
 % Please edit documentation in R/request.R
 \name{request_submit}
 \alias{request_submit}
-\title{Submit a request}
+\title{Submit one or more requests to an authenticated LOBSTER account}
 \usage{
 request_submit(account_login, request)
 }
 \arguments{
-\item{account_login}{An account object which contains the relevant session data.}
+\item{account_login}{list Output from \code{\link[=account_login]{account_login()}} that contains a
+successful authenticated session (\code{valid == TRUE}) and the submission
+response required for navigation.}
 
-\item{request}{A tibble with the requested trading days.}
+\item{request}{data.frame A tibble as returned by \code{\link[=request_query]{request_query()}} with
+columns: symbol, start_date, end_date, level.}
 }
 \value{
-A tibble with an overview of the requested trading days.
+Invisibly returns NULL. The primary effect is to submit requests to
+the remote service; any responses are not returned by this function.
 }
 \description{
-Submit a request
+Send the prepared request rows to lobsterdata.com using the authenticated
+session contained in \code{account_login}. Each row in \code{request} is submitted
+as a separate request. This function performs network side effects and
+returns invisibly.
 }

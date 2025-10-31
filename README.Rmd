@@ -2,6 +2,10 @@
 output: github_document
 ---
 
+  <!-- badges: start -->
+  [![R-CMD-check](https://github.com/voigtstefan/lobsteR/actions/workflows/R-CMD-check.yaml/badge.svghttps://github.com/voigtstefan/lobsteR/actions/workflows/R-CMD-check.yaml/badge.svghttps://github.com/voigtstefan/lobsteR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/voigtstefan/lobsteR/actions/workflows/R-CMD-check.yaml)
+  <!-- badges: end -->
+
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
@@ -14,47 +18,54 @@ knitr::opts_chunk$set(
 
 # lobsteR
 
-<!-- badges: start -->
-<!-- badges: end -->
+lobsteR provides a tidy workflow to request, download, extract and prepare LOBSTER order‑book snapshots from https://lobsterdata.com. It focuses on the common tasks needed to get LOBSTER data ready for analysis (requesting, retrieving and extracting 7z archives). For downstream high‑frequency analysis, consider packages such as `highfrequency`.
 
-The goal of lobsteR is to provide a tidy framework to request data from lobsterdata.com, to download, unzip, and clean the data. The package focuses on the core functionalities required to get LOBSTER data ready fast, for   subsequent typical high-frequency econometrics applications, we refer to the `highfrequency` package.
+## Quick start
 
-## Installation
+1. Install the package (development version):
 
-You can install the development version of lobsteR from [GitHub](https://github.com/) with:
-
-```{r}
-#| eval: false
-# install.packages("devtools")
-devtools::install_github("voigtstefan/lobsteR")
+```r
+|# eval: false
+# install remotes if needed
+remotes::install_github("voigtstefan/lobsteR")
 ```
 
-## Example: Request and download data from lobsterdata.com
+2. Set credentials securely (recommended: store in `~/.Renviron`):
+```r
+# In ~/.Renviron
+# LOBSTER_USER=you@example.com
+# LOBSTER_PWD=your_password
+```
 
-```{r, eval = TRUE, warnings = FALSE}
+3. Use the package (network calls are disabled in this README; run these examples interactively):
+```r
 library(lobsteR)
-library(tidyverse)
+library(dplyr)
 ```
 
-With `lobsteR` you can connect easily connect with lobsterdata.com using your own credentials.
+## Typical workflow
 
-```{r}
+- Authenticate to your LOBSTER account using your own credentials.
+
+```r
 lobster_login <- account_login(
-  login = Sys.getenv("user"), # Replace with your own account mail adress
-  pwd = Sys.getenv("pwd") # Replace with your own account password
+  login = Sys.getenv("LOBSTER_USER"),
+  pwd   = Sys.getenv("LOBSTER_PWD")
 )
 ```
 
-Next, we request some data from lobsterdata.com, e.g., message-level data from *META* for the period from May 1st, 2023 until May 3rd, 2023. ´level´ corresponds to the requested number of orderbook snapshot levels. 
-```{r, eval = TRUE}
+Next, we request some data from lobsterdata.com, e.g., message-level data from *Microsoft* stock for the period from May 1st, 2023 until May 3rd, 2023. ´level´ corresponds to the requested number of orderbook snapshot levels. 
+```r
+#| eval: true
 data_request <- request_query(
-  symbol = "MSFT",
+  symbol     = "MSFT",
   start_date = "2023-05-01",
-  end_date = "2023-05-03",
-  level = 10)
-
+  end_date   = "2023-05-03",
+  level      = 10
+)
 data_request
 ```
+Next, submit the requests to LOBSTER (server will process them; this can take time):
 
 ```{r}
 request_submit(account_login = lobster_login,
@@ -72,5 +83,17 @@ When downloading, we automatically unzip the data (this can be omitted using `un
 data_download(
   requested_data = lobster_archive |> filter(symbol == "MSFT"),
   account_login = lobster_login,
-  path = "../tmp_data")
+  path = "/data")
 ```
+
+## Notes and recommendations
+
+- The package performs network activity for authentication, request submission and downloads.
+- `data_download()` writes files to disk and (optionally) extracts them using the `archive` package. Ensure required system libraries for libarchive are available on your OS.
+- Should you have trouble installing `archive` on Ubuntu, try installing the system dependencies first:
+
+```bash
+sudo apt-get update
+sudo apt-get upgrade -y
+sudo apt-get install -y libarchive-dev
+ ```
