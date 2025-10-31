@@ -13,8 +13,8 @@ account_archive(account_login)
 Tibble with archive data.
 \itemize{
 \item symbol \link{character}
-\item start_date \link{Date}
-\item end_date \link{Date}
+\item start_date \link[lubridate:date_utils]{lubridate::Date}
+\item end_date \link[lubridate:date_utils]{lubridate::Date}
 \item level \link{integer}
 \item size \link{integer}
 \item download \link{character}

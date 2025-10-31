@@ -9,12 +9,10 @@
 #' @importFrom assertthat are_equal
 #' @return An account object which contains the relevant session data.
 account_login <- function(login, pwd) {
-
   session <- session(url = "https://lobsterdata.com/SignIn.php")
 
   form <- html_form(x = session)[[1]] |>
-    html_form_set(login = login,
-                         pwd = pwd)
+    html_form_set(login = login, pwd = pwd)
 
   submission <- session_submit(
     x = session,
@@ -28,7 +26,9 @@ account_login <- function(login, pwd) {
     y = "https://lobsterdata.com/requestdata.php"
   )
 
-  if(valid){cat("# Login on lobsterdata.com successful")}
+  if (valid) {
+    cat("# Login on lobsterdata.com successful")
+  }
   list(
     valid = valid,
     session = session,
@@ -53,7 +53,6 @@ account_login <- function(login, pwd) {
 #'   \item id [integer]
 #' }
 account_archive <- function(account_login) {
-
   stopifnot(account_login$valid)
 
   session <- session_jump_to(
@@ -78,6 +77,8 @@ account_archive <- function(account_login) {
   archive$start_date <- as.Date(archive$start_date)
   archive$end_date <- as.Date(archive$end_date)
   archive <- archive[archive$size != 0, ]
-  archive[order(archive$id, decreasing = TRUE), c(ncol(archive), 1:(ncol(archive)-1))]
+  archive[
+    order(archive$id, decreasing = TRUE),
+    c(ncol(archive), 1:(ncol(archive) - 1))
+  ]
 }
-
