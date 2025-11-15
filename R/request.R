@@ -22,6 +22,9 @@
 #'   returned by [account_archive()]. When provided, rows that match
 #'   (symbol, start_date, end_date, level, size, download, id) are excluded
 #'   from the returned request.
+#' @param frequency character(1), defaults to "1 day". Frequency string passed to request data.
+#'   For large data ranges, it may be beneficial to request data at a lower frequency,
+#'   e.g. "1 month" to reduce the number of requests to the lobster server.
 #'
 #' @return A tibble (data.frame) with one row per trading day and columns:
 #'   * symbol: character
@@ -58,7 +61,8 @@ request_query <- function(
   end_date,
   level,
   validate = TRUE,
-  account_archive = NULL
+  account_archive = NULL,
+  frequency = "1 day"
 ) {
   stopifnot(is.character(symbol))
   stopifnot(!anyNA(symbol))
@@ -73,17 +77,23 @@ request_query <- function(
   request <- pmap_df(
     .l = param,
     ~ {
-      date_range <- seq.Date(from = ..2, to = ..3, by = "1 day")
+      date_range <- seq.Date(from = ..2, to = ..3, by = frequency)
+
+      if (frequency == "1 day") {
+        ends <- date_range # each day is its own period
+      } else {
+        ends <- c(date_range[-1] - 1L, end_date)
+      }
 
       data.frame(
         symbol = ..1,
         start_date = date_range,
-        end_date = date_range,
+        end_date = ends,
         level = as.integer(..4)
       )
     }
   )
-  if (validate) {
+  if (validate & frequency == "1 day") {
     request <- request |>
       .request_validate(request_query = _, account_archive = account_archive)
   }

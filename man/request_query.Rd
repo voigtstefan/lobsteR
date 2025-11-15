@@ -10,7 +10,8 @@ request_query(
   end_date,
   level,
   validate = TRUE,
-  account_archive = NULL
+  account_archive = NULL,
+  frequency = "1 day"
 )
 }
 \arguments{
@@ -35,6 +36,10 @@ present in the account archive.}
 returned by \code{\link[=account_archive]{account_archive()}}. When provided, rows that match
 (symbol, start_date, end_date, level, size, download, id) are excluded
 from the returned request.}
+
+\item{frequency}{character(1), defaults to "1 day". Frequency string passed to request data.
+For large data ranges, it may be beneficial to request data at a lower frequency,
+e.g. "1 month" to reduce the number of requests to the lobster server.}
 }
 \value{
 A tibble (data.frame) with one row per trading day and columns:
