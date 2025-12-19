@@ -26,7 +26,6 @@
 #' @export
 #' @importFrom httr add_headers
 #' @importFrom rvest session html_form html_form_set session_submit
-#' @importFrom assertthat are_equal
 account_login <- function(login, pwd) {
   session <- session(url = "https://lobsterdata.com/SignIn.php")
 
@@ -40,10 +39,7 @@ account_login <- function(login, pwd) {
     add_headers('x-requested-with' = 'XMLHttpRequest')
   )
 
-  valid <- are_equal(
-    x = submission$url,
-    y = "https://lobsterdata.com/requestdata.php"
-  )
+  valid <- submission$url == "https://lobsterdata.com/requestdata.php"
 
   if (valid) {
     cat("# Login on lobsterdata.com successful")
