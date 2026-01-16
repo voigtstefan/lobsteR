@@ -2,18 +2,52 @@
 % Please edit documentation in R/account.R
 \name{account_login}
 \alias{account_login}
-\title{Log into your LOBSTER account}
+\title{Authenticate with LOBSTER account}
 \usage{
 account_login(login, pwd)
 }
 \arguments{
-\item{login}{Your unique account user email address}
+\item{login}{Character string. Your registered email address for the LOBSTER account.}
 
-\item{pwd}{Your unique account password}
+\item{pwd}{Character string. Your account password.}
 }
 \value{
-An account object which contains the relevant session data.
+A list containing authentication details:
+\describe{
+\item{valid}{Logical indicating if login was successful}
+\item{session}{httr session object for the authenticated session}
+\item{submission}{httr response object from the login submission}
+}
 }
 \description{
-Log into your LOBSTER account
+Logs into your LOBSTER account and creates a session object for subsequent
+data requests. This function handles the authentication process with
+lobsterdata.com and validates the login was successful.
+}
+\details{
+The function performs form-based authentication by:
+\enumerate{
+\item Creating a session with the LOBSTER sign-in page
+\item Filling and submitting the login form
+\item Validating the response URL to confirm successful authentication
+}
+
+A successful login redirects to the request data page. The returned object
+should be passed to other functions like \code{\link{account_archive}} and
+\code{\link{request_submit}}.
+}
+\examples{
+\dontrun{
+# Login to LOBSTER account
+my_account <- account_login("user@example.com", "mypassword")
+
+# Check if login was successful
+if (my_account$valid) {
+  message("Successfully logged in!")
+}
+}
+
+}
+\seealso{
+\code{\link{account_archive}}, \code{\link{request_submit}}
 }

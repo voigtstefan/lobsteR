@@ -1,16 +1,17 @@
 Type: Package
 Package: lobsteR
-Title: Download data from lobsterdata.com
+Title: Access and Process LOBSTER high-frequency data
 Version: 0.1.0
 Authors@R: c(
     person("Karol", "Kulma", , "kulmakarol@gmail.com", role = c("aut", "cre")),
     person("Stefan", "Voigt", , "stefan.voigt@econ.ku.dk", role = "aut")
   )
-Description: Tools to request data from lobsterdata.com, to download,
-    unzip, and clean the data from within R.  The package focuses on the
-    core functionalities required to get LOBSTER data ready fast, for
-    subsequent typical high-frequency econometrics applications, we refer
-    to the `highfrequency` package.
+Description: Provides tools to authenticate with lobsterdata.com, request,
+    download, and unzip high-frequency financial market data. The package
+    streamlines the workflow from data request to analysis-ready datasets,
+    with built-in functions for unzipping and cleaning LOBSTER data files.
+    For advanced high-frequency econometric analysis, see the
+    'highfrequency' package.
 License: MIT + file LICENSE
 URL: https://github.com/voigtstefan/lobster
 BugReports: https://github.com/voigtstefan/lobster/issues
@@ -19,14 +20,18 @@ Imports:
     assertthat,
     callr,
     dplyr,
-    glue,
     httr,
     lubridate,
     purrr,
-    readr,
     rvest,
-    tidyr,
     timeDate
+Suggests:
+    knitr,
+    rmarkdown,
+    testthat (>= 3.0.0)
+VignetteBuilder: 
+    knitr
+Config/testthat/edition: 3
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.3

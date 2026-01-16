@@ -2,40 +2,49 @@
 output: github_document
 ---
 
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  eval = FALSE,
   comment = "#>",
   fig.path = "man/figures/README-",
   out.width = "100%"
 )
 ```
 
-# lobsteR
+  # lobsteR <img src="man/figures/logo.png" align="right" height="139" alt="" />
 
 <!-- badges: start -->
+[![Codecov test coverage](https://codecov.io/gh/voigtstefan/lobsteR/graph/badge.svg)](https://app.codecov.io/gh/voigtstefan/lobsteR)
+[![R-CMD-check](https://github.com/voigtstefan/lobsteR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/voigtstefan/lobsteR/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
-The goal of lobsteR is to provide a tidy framework to request data from lobsterdata.com, to download, unzip, and clean the data. The package focuses on the core functionalities required to get LOBSTER data ready fast, for   subsequent typical high-frequency econometrics applications, we refer to the `highfrequency` package.
+The goal of lobsteR is to provide a tidy framework to request data from
+lobsterdata.com, to download, unzip, and clean the data. The package
+focuses on the core functionalities required to get LOBSTER data ready
+fast, for subsequent typical high-frequency econometrics applications,
+we refer to the `highfrequency` package.
 
 ## Installation
 
 You can install the development version of lobsteR from [GitHub](https://github.com/) with:
 
 ```{r}
-# install.packages("devtools")
-devtools::install_github("voigtstefan/lobsteR")
+#| eval: false
+# install.packages("pak")
+pak::pak("voigtstefan/lobsteR")
 ```
 
-## Example: Request and download data from lobsterdata.com
+## Request and download data from lobsterdata.com
 
-```{r, eval = TRUE, warnings = FALSE}
+With `lobsteR` you can connect easily connect with lobsterdata.com using
+your own credentials.
+
+```{r}
 library(lobsteR)
-library(tidyverse)
 ```
-
-With `lobsteR` you can connect easily connect with lobsterdata.com using your own credentials.
 
 ```{r}
 lobster_login <- account_login(
@@ -44,12 +53,18 @@ lobster_login <- account_login(
 )
 ```
 
-Next, we request some data from lobsterdata.com, e.g., message-level data from *META* for the period from May 1st, 2023 until May 3rd, 2023. ´level´ corresponds to the requested number of orderbook snapshot levels. 
-```{r, eval = TRUE}
+I recommend to store your credentials in the `.Renviron` file to avoid hardcoding them in your scripts.
+
+Next, we request some data from lobsterdata.com, e.g., message-level
+data from *META* for the period from May 1st, 2023 until May 3rd, 2023.
+´level´ corresponds to the requested number of orderbook snapshot
+levels.
+
+```{r}
 data_request <- request_query(
   symbol = "MSFT",
-  start_date = "2023-05-01",
-  end_date = "2023-05-03",
+  start_date = "2025-05-01",
+  end_date = "2025-05-15",
   level = 10)
 
 data_request
@@ -60,103 +75,32 @@ request_submit(account_login = lobster_login,
                request = data_request)
 ```
 
-After submitting the request, lobsterdata.com will work on providing the order book snapshots. Depending on the number of messages to process, this may take some time. Once done, the requested data is available in your account archive - ready to download!
+After submitting the request, lobsterdata.com will work on providing the
+order book snapshots. Depending on the number of messages to process,
+this may take some time. You can close the session during the time, the processing will be done in the background on the servers of Lobster. 
+Once done, the requested data is available in your account archive - ready to download!
 
 ```{r}
 lobster_archive <- account_archive(account_login = lobster_login)
 ```
 
-When downloading, we automatically unzip the data (this can be omitted using `unzip = FALSE`) 
+When downloading, the data is unzipped automatically (this can be omitted using `unzip = FALSE`)
+
 ```{r}
+#| eval: false
 data_download(
   requested_data = lobster_archive |> filter(symbol == "MSFT"),
   account_login = lobster_login,
-  path = "../tmp_data")
+  path = "data-lobster")
 ```
 
-# Processing of Lobster files.
+## Data processing on an Unix system
 
-After downloading the data, use cases for Lobster data may differ. A convenient way to work with order book snapshots is to combine message and order book data first which allows for follow-up cleaning procedures. 
-The helper function `process_data` processes lobster files, returns a clean, zipped `.csv` file and removes redundant raw files. 
-```{r}
-process_data(path = "../tmp_data")
-```
+To unzip data, `lobsteR` relies on the `archive` package which, in turn, requires a couple of system dependencies to be installed. On a Debian-based linux system, you can install the required dependencies using the following commands:
 
-Finally, we clean the order book files. Such procedures may be use-case specific but typically, the following steps can be relevant:
-
-- Identify potential trading stops (consult the Lobster documentation for this) and discard all observations recorded during the window when trading was interrupted. Sometimes, messages related to the daily opening and closing auction are included in the Lobster file (especially during days when trading stops earlier, e.g., before holidays). 
-- Remove such observations (opening auctions are identified as messages with type == 6 and ID == -1, and closing auctions can be identified as messages with type == 6 and ID == -2).
-- Replace “empty” slots in the order book with ’NAs in case there was no liquidity quoted at higher order book levels. In that case, Lobster reports negative bid and large ask prices (above 199999).
-Remove observations with seemingly crossed prices (when the best ask is below the best bid).
-- Market orders are sometimes executed against multiple limit orders. In that case, Lobster records multiple transactions with an identical time stamp. Aggregate these transactions and generate the corresponding trade size and the (size-weighted) execution price. Also, retain the order book snapshot after the transaction has been executed.
-- The direction of a trade is hard to evaluate (not observable) if the transaction has been executed against a hidden order (`order_type == 5’). Create a proxy for the direction based on the executed price relative to the last observed order book snapshot.
-
-Each of the points above is implemented in the function `clean_data`. 
-
-```{r, eval = TRUE}
-orderbook <- clean_data(path = "../tmp_data/MSFT_2023-05-02_10.csv.gz")
-```
-
-Finally, we can analyse the orderbook files. The figure below shows the dynamics of the traded prices (red points) and the quoted prices at the higher order book levels.
-```{r, eval = TRUE}
-orderbook_trades <- orderbook |>
-  filter(type==4|type==5) |>
-  select(ts, m_price)
-
-orderbook_quotes <- orderbook |>
-    mutate(ts_new = floor_date(ts, "10 seconds")) |>
-    group_by(ts_new) |>
-    summarise_all(dplyr::last) |>
-    select(-ts_new) |>
-    mutate(id = row_number()) |>
-    select(ts, id, matches("bid|ask")) |>
-    gather(level, price, -ts, -id) |>
-    separate(level, into=c("side", "variable", "level"), sep="_") |>
-    mutate(level = as.numeric(level))  |>
-    pivot_wider(names_from = variable, values_from = price)
-
-ggplot() +
-  theme_bw() +
-  geom_point(data = orderbook_quotes, 
-             aes(x=ts, y=price, color=as_factor(level), size = size/max(size)), alpha = 0.1) +
-  geom_step(data = orderbook_trades, aes(x=ts, y=m_price), linewidth = 0.1) +
-  labs(title="Orderbook Dynamics",
-       y= "Price",
-       x="") +
-  theme(panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        legend.position ="none") +
-  scale_y_continuous()
-```
-
-Next, I compute the midquote, bid-ask spread, aggregate volume, and depth (the amount of trade-able units in the order book).
-
-```{r, eval = TRUE}
-orderbook_summaries <- orderbook |>
-  transmute(ts,
-    midquote = ask_price_1 / 2 + bid_price_1 / 2,
-    trading_volume = if_else(type == 4 | type == 5, m_price * m_size, as.double(NA)),
-    depth_bid = bid_size_1,
-    depth_ask = ask_size_1,
-    spread = 10000 * (ask_price_1 - bid_price_1) / midquote
-  ) |>
-  mutate(
-    ts_latency = as.numeric(lead(ts)) - as.numeric(ts), # time between messages
-    ts_latency = if_else(is.na(ts_latency), 0, ts_latency), # 0 for first message
-    ts_minute = floor_date(ts, "30 minutes")
-  ) |>
-  group_by(ts_minute) |>
-  summarise(
-    midquote = last(midquote),
-    n_trades = sum(!is.na(trading_volume)),
-    n = n(), # number of messages
-    trading_volume = sum(trading_volume, na.rm = TRUE),
-    trading_volume = if_else(is.na(trading_volume), 0, trading_volume),
-    depth0_bid = weighted.mean(depth_bid, ts_latency),
-    depth0_ask = weighted.mean(depth_ask, ts_latency),
-    spread = weighted.mean(spread, ts_latency)
-  )
-
-orderbook_summaries |> knitr::kable()
-
+```{bash}
+#| eval: false
+sudo apt-get update
+sudo apt-get install -y gpgv gnupg libarchive13t64 liblz4-dev libacl1-dev libext2fs-dev nettle-dev
+sudo apt-get install -y libarchive-dev
 ```

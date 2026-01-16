@@ -2,25 +2,59 @@
 % Please edit documentation in R/account.R
 \name{account_archive}
 \alias{account_archive}
-\title{Fetch LOBSTER archive data}
+\title{Retrieve LOBSTER data archive information}
 \usage{
 account_archive(account_login)
 }
 \arguments{
-\item{account_login}{output of the \link{account_login} function}
+\item{account_login}{List object returned by \code{\link{account_login}}.
+Must contain a valid authenticated session.}
 }
 \value{
-Tibble with archive data.
-\itemize{
-\item symbol \link{character}
-\item start_date \link{Date}
-\item end_date \link{Date}
-\item level \link{integer}
-\item size \link{integer}
-\item download \link{character}
-\item id \link{integer}
+A tibble with information about available archive data:
+\describe{
+\item{id}{Integer. Unique identifier for each dataset}
+\item{symbol}{Character. Stock/ETF ticker symbol (e.g., "SPY", "AAPL")}
+\item{start_date}{Date. First date of data coverage}
+\item{end_date}{Date. Last date of data coverage}
+\item{level}{Integer. Order book depth level (number of price levels)}
+\item{size}{Integer. File size in bytes}
+\item{download}{Character. Direct download URL for the dataset}
 }
 }
 \description{
-Fetch LOBSTER archive data
+Fetches information about available datasets in your LOBSTER account archive.
+This includes details about symbols, date ranges, order book levels, file sizes,
+and download links for each available dataset.
+}
+\details{
+The function:
+\enumerate{
+\item Validates the provided account login is successful
+\item Navigates to the data archive page
+\item Scrapes the archive table and extracts download links
+\item Processes and cleans the data into a structured format
+\item Filters out empty datasets (size = 0)
+\item Orders results by ID in descending order (most recent first)
+}
+
+Only datasets with non-zero file sizes are returned. The download URLs
+can be used directly with \code{\link{data_download}} or similar functions.
+}
+\examples{
+\dontrun{
+# Login and get archive info
+my_account <- account_login("user@example.com", "password")
+archive_info <- account_archive(my_account)
+
+# View available datasets
+print(archive_info)
+
+# Get SPY datasets only
+spy_data <- archive_info[archive_info$symbol == "SPY", ]
+}
+
+}
+\seealso{
+\code{\link{account_login}}, \code{\link{data_download}}
 }

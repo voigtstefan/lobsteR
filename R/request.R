@@ -12,8 +12,14 @@
 #' @export
 #' @importFrom assertthat is.date
 #' @importFrom purrr pmap_df
-request_query <- function(symbol, start_date, end_date, level, validate = TRUE, account_archive = NULL) {
-
+request_query <- function(
+  symbol,
+  start_date,
+  end_date,
+  level,
+  validate = TRUE,
+  account_archive = NULL
+) {
   stopifnot(is.character(symbol))
   stopifnot(is.date(as.Date(start_date)))
   stopifnot(is.date(as.Date(end_date)))
@@ -36,8 +42,9 @@ request_query <- function(symbol, start_date, end_date, level, validate = TRUE, 
       )
     }
   )
-  if(validate){
-    request <- request |> .request_validate(request_query = _, account_archive = account_archive)
+  if (validate) {
+    request <- request |>
+      .request_validate(request_query = _, account_archive = account_archive)
   }
   return(request)
 }
@@ -48,25 +55,16 @@ request_query <- function(symbol, start_date, end_date, level, validate = TRUE, 
 #' @param account_archive NULL If provided, the validation filters out data which is already available in the account archive
 #'
 #' @importFrom lubridate year
-#' @importFrom timeDate holidayNYSE
+#' @importFrom timeDate timeDate, isHoliday
 #' @importFrom dplyr anti_join
 .request_validate <- function(request_query, account_archive = NULL) {
-
-  holiday <- sapply(request_query$start_date, year) |>
-    unique() |>
-    holidayNYSE() |>
-    as.Date()
-
-  res <- subset(
-    request_query,
-    !(as.integer(format(request_query$start_date, "%w")) %in% c(0,6) | request_query$start_date %in% holiday)
-  )
-
-  if(!is.null(account_archive)){
+  res <- request_query[
+    !timeDate::isHoliday(timeDate::timeDate(request_query$start_date)),
+  ]
+  if (!is.null(account_archive)) {
     res <- anti_join(res, account_archive, by = colnames(res))
   }
   return(res)
-
 }
 
 #' Submit a request
@@ -81,27 +79,26 @@ request_query <- function(symbol, start_date, end_date, level, validate = TRUE, 
 #' @importFrom httr add_headers
 #' @importFrom purrr pwalk
 request_submit <- function(account_login, request) {
-
   suppressMessages(
     pwalk(
-    request,
-    ~ {
-      html_form(x = account_login$submission)[[1]] |>
-        html_form_set(
-          stock1 = ..1,
-          startdate1 = ..2,
-          enddate1 = ..3,
-          level1 = ..4
-        ) |>
-        session_submit(
-          x = account_login$session,
-          form = _,
-          submit = NULL,
-          add_headers('x-requested-with' = 'XMLHttpRequest')
-        )
-    }
+      request,
+      ~ {
+        html_form(x = account_login$submission)[[1]] |>
+          html_form_set(
+            stock1 = ..1,
+            startdate1 = ..2,
+            enddate1 = ..3,
+            level1 = ..4
+          ) |>
+          session_submit(
+            x = account_login$session,
+            form = _,
+            submit = NULL,
+            add_headers('x-requested-with' = 'XMLHttpRequest')
+          )
+      }
+    )
   )
-)
 }
 
 #' Download requested data
@@ -116,20 +113,24 @@ request_submit <- function(account_login, request) {
 #' @importFrom callr r_bg
 #' @importFrom archive archive_extract
 
-data_download <- function(requested_data, account_login, path = ".", unzip = TRUE) {
-
+data_download <- function(
+  requested_data,
+  account_login,
+  path = ".",
+  unzip = TRUE
+) {
   stopifnot("Path does not exist" = file.exists(path))
 
   download <- requested_data$download
 
-  for(i in 1:length(download)){
+  for (i in 1:length(download)) {
     session <- session_jump_to(account_login$submission, download[i])$response
-    filename = paste0(path,"/",basename(sub(".7z(.*)", ".7z", download[i])))
+    filename = paste0(path, "/", basename(sub(".7z(.*)", ".7z", download[i])))
 
     proc <- r_bg(
       function(content, filename, path, unzip) {
         writeBin(object = content, con = filename)
-        if(unzip){
+        if (unzip) {
           archive::archive_extract(archive = filename, dir = path)
           unlink(filename, recursive = TRUE)
         }
@@ -144,8 +145,5 @@ data_download <- function(requested_data, account_login, path = ".", unzip = TRU
     )
 
     list(id = requested_data$id[i], proc = proc)
-
   }
-
 }
-

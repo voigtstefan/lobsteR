@@ -1,34 +1,69 @@
-#' Log into your LOBSTER account
+#' Authenticate with LOBSTER account
 #'
-#' @param login Your unique account user email address
-#' @param pwd Your unique account password
+#' Logs into your LOBSTER account and creates a session object for subsequent
+#' data requests. This function handles the authentication process with
+#' lobsterdata.com and validates the login was successful.
+#'
+#' @param login Character string. Your registered email address for the LOBSTER account.
+#' @param pwd Character string. Your account password.
+#'
+#' @return A list containing authentication details:
+#' \describe{
+#'   \item{valid}{Logical indicating if login was successful}
+#'   \item{session}{httr session object for the authenticated session}
+#'   \item{submission}{httr response object from the login submission}
+#' }
+#'
+#' @details
+#' The function performs form-based authentication by:
+#' \enumerate{
+#'   \item Creating a session with the LOBSTER sign-in page
+#'   \item Filling and submitting the login form
+#'   \item Validating the response URL to confirm successful authentication
+#' }
+#'
+#' A successful login redirects to the request data page. The returned object
+#' should be passed to other functions like \code{\link{account_archive}} and
+#' \code{\link{request_submit}}.
+#'
+#' @examples
+#' \dontrun{
+#' # Login to LOBSTER account
+#' my_account <- account_login("user@example.com", "mypassword")
+#'
+#' # Check if login was successful
+#' if (my_account$valid) {
+#'   message("Successfully logged in!")
+#' }
+#' }
+#'
+#' @seealso \code{\link{account_archive}}, \code{\link{request_submit}}
 #'
 #' @export
 #' @importFrom httr add_headers
 #' @importFrom rvest session html_form html_form_set session_submit
 #' @importFrom assertthat are_equal
-#' @return An account object which contains the relevant session data.
 account_login <- function(login, pwd) {
-
   session <- session(url = "https://lobsterdata.com/SignIn.php")
 
-  form <- html_form(x = session)[[1]] |>
-    html_form_set(login = login,
-                         pwd = pwd)
+  form <- rvest::html_form(x = session)[[1]] |>
+    rvest::html_form_set(login = login, pwd = pwd)
 
-  submission <- session_submit(
+  submission <- rvest::session_submit(
     x = session,
     form = form,
     submit = "sign in",
-    add_headers('x-requested-with' = 'XMLHttpRequest')
+    httr::add_headers('x-requested-with' = 'XMLHttpRequest')
   )
 
-  valid <- are_equal(
+  valid <- assertthat::are_equal(
     x = submission$url,
-    y = "https://lobsterdata.com/requestdata.php"
+    y = "https://data.lobsterdata.com/requestdata.php"
   )
 
-  if(valid){cat("# Login on lobsterdata.com successful")}
+  if (valid) {
+    cat("# Login on lobsterdata.com successful")
+  }
   list(
     valid = valid,
     session = session,
@@ -36,24 +71,58 @@ account_login <- function(login, pwd) {
   )
 }
 
-#' Fetch LOBSTER archive data
+#' Retrieve LOBSTER data archive information
 #'
-#' @param account_login output of the [account_login] function
+#' Fetches information about available datasets in your LOBSTER account archive.
+#' This includes details about symbols, date ranges, order book levels, file sizes,
+#' and download links for each available dataset.
 #'
-#' @importFrom rvest session_jump_to html_table html_nodes html_attr
-#' @export
-#' @return Tibble with archive data.
-#' \itemize{
-#'   \item symbol [character]
-#'   \item start_date [Date]
-#'   \item end_date [Date]
-#'   \item level [integer]
-#'   \item size [integer]
-#'   \item download [character]
-#'   \item id [integer]
+#' @param account_login List object returned by \code{\link{account_login}}.
+#'   Must contain a valid authenticated session.
+#'
+#' @return A tibble with information about available archive data:
+#' \describe{
+#'   \item{id}{Integer. Unique identifier for each dataset}
+#'   \item{symbol}{Character. Stock/ETF ticker symbol (e.g., "SPY", "AAPL")}
+#'   \item{start_date}{Date. First date of data coverage}
+#'   \item{end_date}{Date. Last date of data coverage}
+#'   \item{level}{Integer. Order book depth level (number of price levels)}
+#'   \item{size}{Integer. File size in bytes}
+#'   \item{download}{Character. Direct download URL for the dataset}
 #' }
+#'
+#' @details
+#' The function:
+#' \enumerate{
+#'   \item Validates the provided account login is successful
+#'   \item Navigates to the data archive page
+#'   \item Scrapes the archive table and extracts download links
+#'   \item Processes and cleans the data into a structured format
+#'   \item Filters out empty datasets (size = 0)
+#'   \item Orders results by ID in descending order (most recent first)
+#' }
+#'
+#' Only datasets with non-zero file sizes are returned. The download URLs
+#' can be used directly with \code{\link{data_download}} or similar functions.
+#'
+#' @examples
+#' \dontrun{
+#' # Login and get archive info
+#' my_account <- account_login("user@example.com", "password")
+#' archive_info <- account_archive(my_account)
+#'
+#' # View available datasets
+#' print(archive_info)
+#'
+#' # Get SPY datasets only
+#' spy_data <- archive_info[archive_info$symbol == "SPY", ]
+#' }
+#'
+#' @seealso \code{\link{account_login}}, \code{\link{data_download}}
+#'
+#' @export
+#' @importFrom rvest session_jump_to html_table html_nodes html_attr
 account_archive <- function(account_login) {
-
   stopifnot(account_login$valid)
 
   session <- session_jump_to(
@@ -78,6 +147,8 @@ account_archive <- function(account_login) {
   archive$start_date <- as.Date(archive$start_date)
   archive$end_date <- as.Date(archive$end_date)
   archive <- archive[archive$size != 0, ]
-  archive[order(archive$id, decreasing = TRUE), c(ncol(archive), 1:(ncol(archive)-1))]
+  archive[
+    order(archive$id, decreasing = TRUE),
+    c(ncol(archive), 1:(ncol(archive) - 1))
+  ]
 }
-
