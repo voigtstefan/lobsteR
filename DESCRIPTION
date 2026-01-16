@@ -13,7 +13,7 @@ Description: Provides tools to authenticate with lobsterdata.com, request,
     For advanced high-frequency econometric analysis, see the
     'highfrequency' package.
 License: MIT + file LICENSE
-URL: https://github.com/voigtstefan/lobster
+URL: https://github.com/voigtstefan/lobster, https://voigtstefan.github.io/lobsteR/
 BugReports: https://github.com/voigtstefan/lobster/issues
 Imports:
     archive,
