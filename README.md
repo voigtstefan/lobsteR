@@ -35,8 +35,8 @@ library(lobsteR)
 
 ``` r
 lobster_login <- account_login(
-  login = Sys.getenv("user"),
-  pwd   = Sys.getenv("pwd")
+  login = Sys.getenv("user"), # replace with your username
+  pwd   = Sys.getenv("pwd")   # replace with your password
 )
 #> # Login on lobsterdata.com successful
 ```
