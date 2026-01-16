@@ -9,7 +9,7 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/voigtstefan/lobster/blob/main/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/voigtstefan/lobsteR/blob/main/DESCRIPTION)
 
 Kulma K, Voigt S (2026). *lobsteR: Access and Process LOBSTER
 high-frequency data*. R package version 0.1.0,
