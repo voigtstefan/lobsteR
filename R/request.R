@@ -1,13 +1,56 @@
-#' Create a LOBSTER query
+#' Create a LOBSTER data request (one row per trading day)
 #'
-#' @param symbol One ticker symbol for which you request data from lobsterdata.com
-#' @param start_date Start date of your request
-#' @param end_date End date of your request
-#' @param level Required number of order book snapshot levels
-#' @param validate TRUE Screens the requested dates for holidays if requested.
-#' @param account_archive NULL If provided the request is checked against already existing data in the archive.
+#' Construct a request describing which trading-day files to ask LOBSTER for.
+#' For each symbol and date range the function expands the range to one row per
+#' calendar day, converts the level to integer, and (optionally) validates the
+#' requested days by removing weekends, NYSE holidays and any days already
+#' present in the provided account archive.
 #'
-#' @return A tibble with an overview of the requested trading days.
+#' @param symbol character vector One or more ticker symbols (e.g. "AAPL").
+#'   Each element is paired with the corresponding elements of `start_date`,
+#'   `end_date` and `level`. Recycling follows base R rules; mismatched lengths
+#'   should be avoided.
+#' @param start_date Date-like (Date or character) Start date(s) for the
+#'   requested range(s). Each start date is converted with `as.Date()`.
+#' @param end_date Date-like (Date or character) End date(s) for the
+#'   requested range(s). Each end date is converted with `as.Date()`.
+#' @param level integer(1) Required order-book snapshot level (e.g. 1, 2).
+#' @param validate logical(1) If TRUE (default) remove weekend days and NYSE
+#'   holidays and — when `account_archive` is supplied — remove days already
+#'   present in the account archive.
+#' @param account_archive data.frame or tibble, optional Archive table as
+#'   returned by [account_archive()]. When provided, rows that match
+#'   (symbol, start_date, end_date, level, size, download, id) are excluded
+#'   from the returned request.
+#' @param frequency character(1), defaults to "1 day". Frequency string passed to request data.
+#'   For large data ranges, it may be beneficial to request data at a lower frequency,
+#'   e.g. "1 month" to reduce the number of requests to the lobster server.
+#'
+#' @return A tibble (data.frame) with one row per trading day and columns:
+#'   * symbol: character
+#'   * start_date: Date
+#'   * end_date: Date (equal to start_date for daily requests)
+#'   * level: integer
+#'
+#'   The function returns only the days that remain after optional validation.
+#'
+#' @details The function does not perform network activity. Use
+#'   [request_submit()] to send the generated requests to the authenticated
+#'   LOBSTER session.
+#'
+#' @examples
+#' \dontrun{
+#' # Single symbol, one-month range
+#' req <- request_query("AAPL", "2020-01-01", "2020-01-31", level = 2)
+#'
+#' # Multiple symbols / ranges (vectorised inputs)
+#' req <- request_query(
+#'   symbol = c("AAPL", "MSFT"),
+#'   start_date = c("2020-01-01", "2020-02-01"),
+#'   end_date = c("2020-01-03", "2020-02-03"),
+#'   level = c(1, 1)
+#' )
+#' }
 #'
 #' @export
 #' @importFrom assertthat is.date
@@ -21,6 +64,7 @@ request_query <- function(
   account_archive = NULL
 ) {
   stopifnot(is.character(symbol))
+  stopifnot(!anyNA(symbol))
   stopifnot(is.date(as.Date(start_date)))
   stopifnot(is.date(as.Date(end_date)))
   stopifnot(is.numeric(level))
@@ -32,12 +76,18 @@ request_query <- function(
   request <- pmap_df(
     .l = param,
     ~ {
-      date_range <- seq.Date(from = ..2, to = ..3, by = "1 day")
+      date_range <- seq.Date(from = ..2, to = ..3, by = frequency)
+
+      if (frequency == "1 day") {
+        ends <- date_range # each day is its own period
+      } else {
+        ends <- c(date_range[-1] - 1L, end_date)
+      }
 
       data.frame(
         symbol = ..1,
         start_date = date_range,
-        end_date = date_range,
+        end_date = ends,
         level = as.integer(..4)
       )
     }
@@ -49,11 +99,23 @@ request_query <- function(
   return(request)
 }
 
-#' Validate a request
+#' Validate a generated request (remove weekends, holidays, existing files)
 #'
-#' @param request_query A tibble which states symbol, start_date, end_date, and level of the required data
-#' @param account_archive NULL If provided, the validation filters out data which is already available in the account archive
+#' Internal helper used by [request_query()]. Removes weekend days (Saturday
+#' and Sunday) and NYSE holidays for the years present in `request_query`.
+#' When `account_archive` is supplied, rows that are already available in the
+#' archive are removed using a row-wise anti-join.
 #'
+#' @param request_query data.frame A tibble produced by [request_query()]
+#'   containing columns: symbol, start_date, end_date, level.
+#' @param account_archive data.frame or tibble, optional When provided, rows
+#'   present in the archive (matching all columns of `request_query`) are
+#'   excluded from the validation result.
+#'
+#' @return A filtered tibble containing only valid trading days that are not
+#'   weekends, NYSE holidays, or already present in `account_archive`.
+#'
+#' @keywords internal
 #' @importFrom lubridate year
 #' @importFrom timeDate timeDate, isHoliday
 #' @importFrom dplyr anti_join
@@ -67,12 +129,21 @@ request_query <- function(
   return(res)
 }
 
-#' Submit a request
+#' Submit one or more requests to an authenticated LOBSTER account
 #'
-#' @param account_login An account object which contains the relevant session data.
-#' @param request A tibble with the requested trading days.
+#' Send the prepared request rows to lobsterdata.com using the authenticated
+#' session contained in `account_login`. Each row in `request` is submitted
+#' as a separate request. This function performs network side effects and
+#' returns invisibly.
 #'
-#' @return A tibble with an overview of the requested trading days.
+#' @param account_login list Output from [account_login()] that contains a
+#'   successful authenticated session (`valid == TRUE`) and the submission
+#'   response required for navigation.
+#' @param request data.frame A tibble as returned by [request_query()] with
+#'   columns: symbol, start_date, end_date, level.
+#'
+#' @return Invisibly returns NULL. The primary effect is to submit requests to
+#'   the remote service; any responses are not returned by this function.
 #'
 #' @export
 #' @importFrom rvest html_form html_form_set session_submit
@@ -101,18 +172,36 @@ request_submit <- function(account_login, request) {
   )
 }
 
-#' Download requested data
+#' Download requested archive files
 #'
-#' @param requested_data Tibble with archive data.
-#' @param path relative path where the data should be stored
-#' @param account_login An account object which contains the relevant session data.
-#' @param unzip TRUE If true, the .7z files are automatically unzipped. This can be omitted.
+#' Download one or more files listed in `requested_data` using the authenticated
+#' session in `account_login`. Files are written to `path`. Downloads occur in
+#' the calling R process but the file write and optional extraction are
+#' performed in a background R process (via callr::r_bg). If `unzip = TRUE`
+#' the original archive is removed after extraction.
+#'
+#' @param requested_data data.frame A tibble with archive metadata that must
+#'   include at minimum a `download` column (full download URL) and an `id`
+#'   column used for tracking.
+#' @param account_login list Output from [account_login()] containing the
+#'   authenticated session used to fetch file content.
+#' @param path character(1) Filesystem path where downloaded files will be
+#'   written and (if `unzip = TRUE`) extracted. The path must already exist.
+#' @param unzip logical(1) If TRUE (default) extract the downloaded .7z archive
+#'   using archive::archive_extract and delete the archive file afterwards.
+#'
+#' @details The function uses rvest::session_jump_to() to request each download
+#'   URL and then launches a background R process to write the binary content
+#'   and optionally extract it. The function is silent about progress and
+#'   returns invisibly; background processes are left running under callr.
+#'
+#' @return Invisibly returns NULL. Side effects: files written to `path` and
+#'   background processes spawned to perform file writes / extraction.
 #'
 #' @export
 #' @importFrom rvest session_jump_to
 #' @importFrom callr r_bg
 #' @importFrom archive archive_extract
-
 data_download <- function(
   requested_data,
   account_login,

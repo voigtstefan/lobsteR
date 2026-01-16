@@ -2,19 +2,38 @@
 % Please edit documentation in R/request.R
 \name{data_download}
 \alias{data_download}
-\title{Download requested data}
+\title{Download requested archive files}
 \usage{
 data_download(requested_data, account_login, path = ".", unzip = TRUE)
 }
 \arguments{
-\item{requested_data}{Tibble with archive data.}
+\item{requested_data}{data.frame A tibble with archive metadata that must
+include at minimum a \code{download} column (full download URL) and an \code{id}
+column used for tracking.}
 
-\item{account_login}{An account object which contains the relevant session data.}
+\item{account_login}{list Output from \code{\link[=account_login]{account_login()}} containing the
+authenticated session used to fetch file content.}
 
-\item{path}{relative path where the data should be stored}
+\item{path}{character(1) Filesystem path where downloaded files will be
+written and (if \code{unzip = TRUE}) extracted. The path must already exist.}
 
-\item{unzip}{TRUE If true, the .7z files are automatically unzipped. This can be omitted.}
+\item{unzip}{logical(1) If TRUE (default) extract the downloaded .7z archive
+using archive::archive_extract and delete the archive file afterwards.}
+}
+\value{
+Invisibly returns NULL. Side effects: files written to \code{path} and
+background processes spawned to perform file writes / extraction.
 }
 \description{
-Download requested data
+Download one or more files listed in \code{requested_data} using the authenticated
+session in \code{account_login}. Files are written to \code{path}. Downloads occur in
+the calling R process but the file write and optional extraction are
+performed in a background R process (via callr::r_bg). If \code{unzip = TRUE}
+the original archive is removed after extraction.
+}
+\details{
+The function uses rvest::session_jump_to() to request each download
+URL and then launches a background R process to write the binary content
+and optionally extract it. The function is silent about progress and
+returns invisibly; background processes are left running under callr.
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/request.R
 \name{request_query}
 \alias{request_query}
-\title{Create a LOBSTER query}
+\title{Create a LOBSTER data request (one row per trading day)}
 \usage{
 request_query(
   symbol,
@@ -10,25 +10,72 @@ request_query(
   end_date,
   level,
   validate = TRUE,
-  account_archive = NULL
+  account_archive = NULL,
+  frequency = "1 day"
 )
 }
 \arguments{
-\item{symbol}{One ticker symbol for which you request data from lobsterdata.com}
+\item{symbol}{character vector One or more ticker symbols (e.g. "AAPL").
+Each element is paired with the corresponding elements of \code{start_date},
+\code{end_date} and \code{level}. Recycling follows base R rules; mismatched lengths
+should be avoided.}
 
-\item{start_date}{Start date of your request}
+\item{start_date}{Date-like (Date or character) Start date(s) for the
+requested range(s). Each start date is converted with \code{as.Date()}.}
 
-\item{end_date}{End date of your request}
+\item{end_date}{Date-like (Date or character) End date(s) for the
+requested range(s). Each end date is converted with \code{as.Date()}.}
 
-\item{level}{Required number of order book snapshot levels}
+\item{level}{integer(1) Required order-book snapshot level (e.g. 1, 2).}
 
-\item{validate}{TRUE Screens the requested dates for holidays if requested.}
+\item{validate}{logical(1) If TRUE (default) remove weekend days and NYSE
+holidays and — when \code{account_archive} is supplied — remove days already
+present in the account archive.}
 
-\item{account_archive}{NULL If provided the request is checked against already existing data in the archive.}
+\item{account_archive}{data.frame or tibble, optional Archive table as
+returned by \code{\link[=account_archive]{account_archive()}}. When provided, rows that match
+(symbol, start_date, end_date, level, size, download, id) are excluded
+from the returned request.}
+
+\item{frequency}{character(1), defaults to "1 day". Frequency string passed to request data.
+For large data ranges, it may be beneficial to request data at a lower frequency,
+e.g. "1 month" to reduce the number of requests to the lobster server.}
 }
 \value{
-A tibble with an overview of the requested trading days.
+A tibble (data.frame) with one row per trading day and columns:
+\itemize{
+\item symbol: character
+\item start_date: Date
+\item end_date: Date (equal to start_date for daily requests)
+\item level: integer
+}
+
+The function returns only the days that remain after optional validation.
 }
 \description{
-Create a LOBSTER query
+Construct a request describing which trading-day files to ask LOBSTER for.
+For each symbol and date range the function expands the range to one row per
+calendar day, converts the level to integer, and (optionally) validates the
+requested days by removing weekends, NYSE holidays and any days already
+present in the provided account archive.
+}
+\details{
+The function does not perform network activity. Use
+\code{\link[=request_submit]{request_submit()}} to send the generated requests to the authenticated
+LOBSTER session.
+}
+\examples{
+\dontrun{
+# Single symbol, one-month range
+req <- request_query("AAPL", "2020-01-01", "2020-01-31", level = 2)
+
+# Multiple symbols / ranges (vectorised inputs)
+req <- request_query(
+  symbol = c("AAPL", "MSFT"),
+  start_date = c("2020-01-01", "2020-02-01"),
+  end_date = c("2020-01-03", "2020-02-03"),
+  level = c(1, 1)
+)
+}
+
 }

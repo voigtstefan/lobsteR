@@ -4,7 +4,7 @@ Title: Access and Process LOBSTER high-frequency data
 Version: 0.1.0
 Authors@R: c(
     person("Karol", "Kulma", , "kulmakarol@gmail.com", role = c("aut", "cre")),
-    person("Stefan", "Voigt", , "stefan.voigt@econ.ku.dk", role = "aut")
+    person("Stefan", "Voigt", , "stefan.voigt@econ.ku.dk", role = c("aut", "cph"))
   )
 Description: Provides tools to authenticate with lobsterdata.com, request,
     download, and unzip high-frequency financial market data. The package

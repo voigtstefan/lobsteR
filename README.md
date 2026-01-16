@@ -11,16 +11,9 @@ coverage](https://codecov.io/gh/voigtstefan/lobsteR/graph/badge.svg)](https://ap
 [![R-CMD-check](https://github.com/voigtstefan/lobsteR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/voigtstefan/lobsteR/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
-The goal of lobsteR is to provide a tidy framework to request data from
-lobsterdata.com, to download, unzip, and clean the data. The package
-focuses on the core functionalities required to get LOBSTER data ready
-fast, for subsequent typical high-frequency econometrics applications,
-we refer to the `highfrequency` package.
+## Quick start
 
-## Installation
-
-You can install the development version of lobsteR from
-[GitHub](https://github.com/) with:
+1.  Install the package (development version):
 
 ``` r
 # install.packages("pak")
@@ -29,8 +22,9 @@ pak::pak("voigtstefan/lobsteR")
 
 ## Request and download data from lobsterdata.com
 
-With `lobsteR` you can connect easily connect with lobsterdata.com using
-your own credentials.
+## Typical workflow
+
+- Authenticate to your LOBSTER account using your own credentials.
 
 ``` r
 library(lobsteR)
@@ -38,8 +32,8 @@ library(lobsteR)
 
 ``` r
 lobster_login <- account_login(
-  login = Sys.getenv("user"), # Replace with your own account mail adress
-  pwd = Sys.getenv("pwd") # Replace with your own account password
+  login = Sys.getenv("LOBSTER_USER"),
+  pwd   = Sys.getenv("LOBSTER_PWD")
 )
 #> # Login on lobsterdata.com successful
 ```
@@ -48,11 +42,12 @@ I recommend to store your credentials in the `.Renviron` file to avoid
 hardcoding them in your scripts.
 
 Next, we request some data from lobsterdata.com, e.g., message-level
-data from *META* for the period from May 1st, 2023 until May 3rd, 2023.
-´level´ corresponds to the requested number of orderbook snapshot
-levels.
+data from *Microsoft* stock for the period from May 1st, 2023 until May
+3rd, 2023. ´level´ corresponds to the requested number of orderbook
+snapshot levels.
 
 ``` r
+#| eval: true
 data_request <- request_query(
   symbol = "MSFT",
   start_date = "2025-05-01",
@@ -73,6 +68,9 @@ data_request
 #> 14   MSFT 2025-05-14 2025-05-14    10
 #> 15   MSFT 2025-05-15 2025-05-15    10
 ```
+
+Next, submit the requests to LOBSTER (server will process them; this can
+take time):
 
 ``` r
 request_submit(account_login = lobster_login,

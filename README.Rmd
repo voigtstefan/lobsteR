@@ -2,9 +2,6 @@
 output: github_document
 ---
 
-<!-- README.md is generated from README.Rmd. Please edit that file -->
-
-
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
@@ -27,7 +24,7 @@ focuses on the core functionalities required to get LOBSTER data ready
 fast, for subsequent typical high-frequency econometrics applications,
 we refer to the `highfrequency` package.
 
-## Installation
+1. Install the package (development version):
 
 You can install the development version of lobsteR from [GitHub](https://github.com/) with:
 
@@ -48,8 +45,8 @@ library(lobsteR)
 
 ```{r}
 lobster_login <- account_login(
-  login = Sys.getenv("user"), # Replace with your own account mail adress
-  pwd = Sys.getenv("pwd") # Replace with your own account password
+  login = Sys.getenv("LOBSTER_USER"),
+  pwd   = Sys.getenv("LOBSTER_PWD")
 )
 ```
 
@@ -69,6 +66,8 @@ data_request <- request_query(
 
 data_request
 ```
+
+Next, submit the requests to LOBSTER (server will process them; this can take time):
 
 ```{r}
 request_submit(account_login = lobster_login,
