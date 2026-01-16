@@ -61,7 +61,8 @@ request_query <- function(
   end_date,
   level,
   validate = TRUE,
-  account_archive = NULL
+  account_archive = NULL,
+  frequency = "1 day"
 ) {
   stopifnot(is.character(symbol))
   stopifnot(!anyNA(symbol))
@@ -92,7 +93,7 @@ request_query <- function(
       )
     }
   )
-  if (validate) {
+  if (validate & frequency == "1 day") {
     request <- request |>
       .request_validate(request_query = _, account_archive = account_archive)
   }
@@ -117,7 +118,8 @@ request_query <- function(
 #'
 #' @keywords internal
 #' @importFrom lubridate year
-#' @importFrom timeDate timeDate, isHoliday
+#' @importFrom timeDate timeDate
+#' @importFrom timeDate isHoliday
 #' @importFrom dplyr anti_join
 .request_validate <- function(request_query, account_archive = NULL) {
   res <- request_query[

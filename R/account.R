@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 #' Authenticate with LOBSTER account
 #'
 #' Logs into your LOBSTER account and creates a session object for subsequent
@@ -39,14 +38,6 @@
 #' }
 #'
 #' @seealso \code{\link{account_archive}}, \code{\link{request_submit}}
-=======
-#' Log in to a LOBSTER account and start an authenticated session
-#'
-#' Establishes a web session on lobsterdata.com using rvest and attempts to
-#' authenticate with the provided credentials. The returned object contains
-#' the rvest session and the form submission response; pass that object to
-#' [account_archive()] to list available datasets for the account.
->>>>>>> a27271751befc55a861be3714a1760641fa7824f
 #'
 #' @param login character(1) Email address associated with the LOBSTER account.
 #' @param pwd character(1) Account password.

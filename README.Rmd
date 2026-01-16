@@ -11,7 +11,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-  # lobsteR <img src="man/figures/logo.png" align="right" height="139" alt="" />
+# lobsteR <img src="man/figures/logo.png" align="right" height="139" alt="" />
 
 <!-- badges: start -->
 [![Codecov test coverage](https://codecov.io/gh/voigtstefan/lobsteR/graph/badge.svg)](https://app.codecov.io/gh/voigtstefan/lobsteR)
@@ -28,8 +28,7 @@ we refer to the `highfrequency` package.
 
 You can install the development version of lobsteR from [GitHub](https://github.com/) with:
 
-```{r}
-#| eval: false
+```{r eval = FALSE}
 # install.packages("pak")
 pak::pak("voigtstefan/lobsteR")
 ```
@@ -45,8 +44,8 @@ library(lobsteR)
 
 ```{r}
 lobster_login <- account_login(
-  login = Sys.getenv("LOBSTER_USER"),
-  pwd   = Sys.getenv("LOBSTER_PWD")
+  login = Sys.getenv("user"),
+  pwd   = Sys.getenv("pwd")
 )
 ```
 
@@ -85,8 +84,7 @@ lobster_archive <- account_archive(account_login = lobster_login)
 
 When downloading, the data is unzipped automatically (this can be omitted using `unzip = FALSE`)
 
-```{r}
-#| eval: false
+```{r eval= FALSE}
 data_download(
   requested_data = lobster_archive |> filter(symbol == "MSFT"),
   account_login = lobster_login,

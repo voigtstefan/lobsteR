@@ -1,8 +1,5 @@
 
-<!-- README.md is generated from README.Rmd. Please edit that file -->
-
-\# lobsteR
-<img src="man/figures/logo.png" align="right" height="139" alt="" />
+# lobsteR <img src="man/figures/logo.png" align="right" height="139" alt="" />
 
 <!-- badges: start -->
 
@@ -11,9 +8,16 @@ coverage](https://codecov.io/gh/voigtstefan/lobsteR/graph/badge.svg)](https://ap
 [![R-CMD-check](https://github.com/voigtstefan/lobsteR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/voigtstefan/lobsteR/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
-## Quick start
+The goal of lobsteR is to provide a tidy framework to request data from
+lobsterdata.com, to download, unzip, and clean the data. The package
+focuses on the core functionalities required to get LOBSTER data ready
+fast, for subsequent typical high-frequency econometrics applications,
+we refer to the `highfrequency` package.
 
 1.  Install the package (development version):
+
+You can install the development version of lobsteR from
+[GitHub](https://github.com/) with:
 
 ``` r
 # install.packages("pak")
@@ -22,9 +26,8 @@ pak::pak("voigtstefan/lobsteR")
 
 ## Request and download data from lobsterdata.com
 
-## Typical workflow
-
-- Authenticate to your LOBSTER account using your own credentials.
+With `lobsteR` you can connect easily connect with lobsterdata.com using
+your own credentials.
 
 ``` r
 library(lobsteR)
@@ -32,8 +35,8 @@ library(lobsteR)
 
 ``` r
 lobster_login <- account_login(
-  login = Sys.getenv("LOBSTER_USER"),
-  pwd   = Sys.getenv("LOBSTER_PWD")
+  login = Sys.getenv("user"),
+  pwd   = Sys.getenv("pwd")
 )
 #> # Login on lobsterdata.com successful
 ```
@@ -42,12 +45,11 @@ I recommend to store your credentials in the `.Renviron` file to avoid
 hardcoding them in your scripts.
 
 Next, we request some data from lobsterdata.com, e.g., message-level
-data from *Microsoft* stock for the period from May 1st, 2023 until May
-3rd, 2023. ´level´ corresponds to the requested number of orderbook
-snapshot levels.
+data from *META* for the period from May 1st, 2023 until May 3rd, 2023.
+´level´ corresponds to the requested number of orderbook snapshot
+levels.
 
 ``` r
-#| eval: true
 data_request <- request_query(
   symbol = "MSFT",
   start_date = "2025-05-01",

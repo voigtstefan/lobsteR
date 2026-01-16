@@ -7,9 +7,9 @@
 account_login(login, pwd)
 }
 \arguments{
-\item{login}{Character string. Your registered email address for the LOBSTER account.}
+\item{login}{character(1) Email address associated with the LOBSTER account.}
 
-\item{pwd}{Character string. Your account password.}
+\item{pwd}{character(1) Account password.}
 }
 \value{
 A list containing authentication details:
@@ -17,6 +17,13 @@ A list containing authentication details:
 \item{valid}{Logical indicating if login was successful}
 \item{session}{httr session object for the authenticated session}
 \item{submission}{httr response object from the login submission}
+}
+
+A named list with components:
+\describe{
+\item{valid}{logical(1) — TRUE when authentication succeeded.}
+\item{session}{rvest session object used for further navigation.}
+\item{submission}{rvest response returned after the sign-in form was submitted.}
 }
 }
 \description{
@@ -35,6 +42,10 @@ The function performs form-based authentication by:
 A successful login redirects to the request data page. The returned object
 should be passed to other functions like \code{\link{account_archive}} and
 \code{\link{request_submit}}.
+
+The function submits the sign-in form using an AJAX header
+(x-requested-with: XMLHttpRequest) and confirms success by checking the
+redirect URL. Network connectivity and valid credentials are required.
 }
 \examples{
 \dontrun{
@@ -47,6 +58,12 @@ if (my_account$valid) {
 }
 }
 
+\dontrun{
+acct <- account_login("you@example.com", "your-password")
+if (acct$valid) {
+  archive <- account_archive(acct)
+}
+}
 }
 \seealso{
 \code{\link{account_archive}}, \code{\link{request_submit}}
