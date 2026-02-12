@@ -147,6 +147,36 @@ request_query <- function(
 #' @return Invisibly returns NULL. The primary effect is to submit requests to
 #'   the remote service; any responses are not returned by this function.
 #'
+#' @details
+#' The function iterates through each row of the `request` data frame and
+#' submits a separate AJAX request to the LOBSTER server. The processing
+#' happens asynchronously on the server side, so the function returns
+#' immediately after submission. Use \code{\link{account_archive}} to check
+#' when the data becomes available for download.
+#'
+#' @examples
+#' \dontrun{
+#' # Login to your account
+#' my_account <- account_login("user@example.com", "password")
+#'
+#' # Create a data request
+#' req <- request_query(
+#'   symbol = "AAPL",
+#'   start_date = "2024-01-02",
+#'   end_date = "2024-01-05",
+#'   level = 10
+#' )
+#'
+#' # Submit the request
+#' request_submit(account_login = my_account, request = req)
+#'
+#' # Wait for processing (may take several minutes)
+#' # Then check your archive
+#' archive <- account_archive(my_account)
+#' }
+#'
+#' @seealso \code{\link{account_login}}, \code{\link{request_query}}, \code{\link{account_archive}}
+#'
 #' @export
 #' @importFrom rvest html_form html_form_set session_submit
 #' @importFrom httr add_headers
@@ -197,8 +227,45 @@ request_submit <- function(account_login, request) {
 #'   and optionally extract it. The function is silent about progress and
 #'   returns invisibly; background processes are left running under callr.
 #'
+#'   Downloaded files are LOBSTER format message and order book files with
+#'   naming convention: `SYMBOL_YYYY-MM-DD_LEVEL_messageXXX.csv` and
+#'   `SYMBOL_YYYY-MM-DD_LEVEL_orderbookXXX.csv`.
+#'
 #' @return Invisibly returns NULL. Side effects: files written to `path` and
 #'   background processes spawned to perform file writes / extraction.
+#'
+#' @examples
+#' \dontrun{
+#' # Login and get archive
+#' my_account <- account_login("user@example.com", "password")
+#' archive <- account_archive(my_account)
+#'
+#' # Download all AAPL data
+#' data_download(
+#'   requested_data = archive[archive$symbol == "AAPL", ],
+#'   account_login = my_account,
+#'   path = "data/lobster"
+#' )
+#'
+#' # Download without extracting (keep .7z files)
+#' data_download(
+#'   requested_data = archive[1:3, ],
+#'   account_login = my_account,
+#'   path = "data/lobster",
+#'   unzip = FALSE
+#' )
+#'
+#' # Using dplyr to filter specific data
+#' library(dplyr)
+#' data_download(
+#'   requested_data = archive |>
+#'     filter(symbol == "MSFT", start_date >= as.Date("2024-01-01")),
+#'   account_login = my_account,
+#'   path = "data/lobster"
+#' )
+#' }
+#'
+#' @seealso \code{\link{account_archive}}, \code{\link{account_login}}
 #'
 #' @export
 #' @importFrom rvest session_jump_to

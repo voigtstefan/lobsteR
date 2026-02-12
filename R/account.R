@@ -4,14 +4,14 @@
 #' data requests. This function handles the authentication process with
 #' lobsterdata.com and validates the login was successful.
 #'
-#' @param login Character string. Your registered email address for the LOBSTER account.
-#' @param pwd Character string. Your account password.
+#' @param login character(1) Email address associated with the LOBSTER account.
+#' @param pwd character(1) Account password.
 #'
-#' @return A list containing authentication details:
+#' @return A named list with components:
 #' \describe{
-#'   \item{valid}{Logical indicating if login was successful}
-#'   \item{session}{httr session object for the authenticated session}
-#'   \item{submission}{httr response object from the login submission}
+#'   \item{valid}{logical(1) — TRUE when authentication succeeded.}
+#'   \item{session}{rvest session object used for further navigation.}
+#'   \item{submission}{rvest response returned after the sign-in form was submitted.}
 #' }
 #'
 #' @details
@@ -26,6 +26,10 @@
 #' should be passed to other functions like \code{\link{account_archive}} and
 #' \code{\link{request_submit}}.
 #'
+#' The function submits the sign-in form using an AJAX header
+#' (x-requested-with: XMLHttpRequest) and confirms success by checking the
+#' redirect URL. Network connectivity and valid credentials are required.
+#'
 #' @examples
 #' \dontrun{
 #' # Login to LOBSTER account
@@ -35,28 +39,13 @@
 #' if (my_account$valid) {
 #'   message("Successfully logged in!")
 #' }
+#'
+#' # Use the account object for subsequent operations
+#' archive <- account_archive(my_account)
 #' }
 #'
 #' @seealso \code{\link{account_archive}}, \code{\link{request_submit}}
 #'
-#' @param login character(1) Email address associated with the LOBSTER account.
-#' @param pwd character(1) Account password.
-#' @return A named list with components:
-#' \describe{
-#'   \item{valid}{logical(1) — TRUE when authentication succeeded.}
-#'   \item{session}{rvest session object used for further navigation.}
-#'   \item{submission}{rvest response returned after the sign-in form was submitted.}
-#' }
-#' @details The function submits the sign-in form using an AJAX header
-#' (x-requested-with: XMLHttpRequest) and confirms success by checking the
-#' redirect URL. Network connectivity and valid credentials are required.
-#' @examples
-#' \dontrun{
-#' acct <- account_login("you@example.com", "your-password")
-#' if (acct$valid) {
-#'   archive <- account_archive(acct)
-#' }
-#' }
 #' @export
 #' @importFrom httr add_headers
 #' @importFrom rvest session html_form html_form_set session_submit

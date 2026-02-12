@@ -12,13 +12,6 @@ account_login(login, pwd)
 \item{pwd}{character(1) Account password.}
 }
 \value{
-A list containing authentication details:
-\describe{
-\item{valid}{Logical indicating if login was successful}
-\item{session}{httr session object for the authenticated session}
-\item{submission}{httr response object from the login submission}
-}
-
 A named list with components:
 \describe{
 \item{valid}{logical(1) — TRUE when authentication succeeded.}
@@ -56,13 +49,9 @@ my_account <- account_login("user@example.com", "mypassword")
 if (my_account$valid) {
   message("Successfully logged in!")
 }
-}
 
-\dontrun{
-acct <- account_login("you@example.com", "your-password")
-if (acct$valid) {
-  archive <- account_archive(acct)
-}
+# Use the account object for subsequent operations
+archive <- account_archive(my_account)
 }
 }
 \seealso{

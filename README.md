@@ -26,7 +26,7 @@ pak::pak("voigtstefan/lobsteR")
 
 ## Request and download data from lobsterdata.com
 
-With `lobsteR` you can connect easily connect with lobsterdata.com using
+With `lobsteR` you can easily connect with lobsterdata.com using
 your own credentials.
 
 ``` r
@@ -36,8 +36,7 @@ library(lobsteR)
 ``` r
 lobster_login <- account_login(
   login = Sys.getenv("user"), # replace with your username
-  pwd   = Sys.getenv("pwd")   # replace with your passworduse_github_links(overwrite = FALSE)
-
+  pwd   = Sys.getenv("pwd")   # replace with your password
 )
 #> # Login on lobsterdata.com successful
 ```
@@ -46,8 +45,8 @@ I recommend to store your credentials in the `.Renviron` file to avoid
 hardcoding them in your scripts.
 
 Next, we request some data from lobsterdata.com, e.g., message-level
-data from *META* for the period from May 1st, 2023 until May 3rd, 2023.
-´level´ corresponds to the requested number of orderbook snapshot
+data from *MSFT* for the period from May 1st, 2025 until May 15th, 2025.
+`level` corresponds to the requested number of order book snapshot
 levels.
 
 ``` r

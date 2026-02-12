@@ -24,3 +24,35 @@ session contained in \code{account_login}. Each row in \code{request} is submitt
 as a separate request. This function performs network side effects and
 returns invisibly.
 }
+\details{
+The function iterates through each row of the \code{request} data frame and
+submits a separate AJAX request to the LOBSTER server. The processing
+happens asynchronously on the server side, so the function returns
+immediately after submission. Use \code{\link{account_archive}} to check
+when the data becomes available for download.
+}
+\examples{
+\dontrun{
+# Login to your account
+my_account <- account_login("user@example.com", "password")
+
+# Create a data request
+req <- request_query(
+  symbol = "AAPL",
+  start_date = "2024-01-02",
+  end_date = "2024-01-05",
+  level = 10
+)
+
+# Submit the request
+request_submit(account_login = my_account, request = req)
+
+# Wait for processing (may take several minutes)
+# Then check your archive
+archive <- account_archive(my_account)
+}
+
+}
+\seealso{
+\code{\link{account_login}}, \code{\link{request_query}}, \code{\link{account_archive}}
+}
