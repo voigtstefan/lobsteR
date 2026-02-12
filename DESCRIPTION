@@ -1,6 +1,6 @@
 Type: Package
 Package: lobsteR
-Title: Access and Process LOBSTER high-frequency data
+Title: Access and Process LOBSTER High-Frequency Data
 Version: 0.1.0
 Authors@R: c(
     person("Karol", "Kulma", , "kulmakarol@gmail.com", role = c("aut")),

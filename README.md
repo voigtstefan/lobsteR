@@ -81,8 +81,8 @@ request_submit(account_login = lobster_login,
 
 After submitting the request, lobsterdata.com will work on providing the
 order book snapshots. Depending on the number of messages to process,
-this may take some time. You can close the session during the time, the
-processing will be done in the background on the servers of Lobster.
+this may take some time. You can close the session during this period; the
+processing will be done in the background on the servers of LOBSTER.
 Once done, the requested data is available in your account archive -
 ready to download!
 
@@ -100,7 +100,7 @@ data_download(
   path = "data-lobster")
 ```
 
-## Data processing on an Unix system
+## Data processing on a Unix system
 
 To unzip data, `lobsteR` relies on the `archive` package which, in turn,
 requires a couple of system dependencies to be installed. On a
