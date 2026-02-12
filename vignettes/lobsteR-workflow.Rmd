@@ -1,0 +1,280 @@
+---
+title: "Getting Started with lobsteR"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting Started with lobsteR}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = FALSE
+)
+```
+
+# Introduction
+
+The `lobsteR` package provides a streamlined workflow for accessing and processing high-frequency financial market data from [lobsterdata.com](https://lobsterdata.com). This vignette demonstrates the complete workflow from authentication to downloading and processing LOBSTER data.
+
+## Prerequisites
+
+Before using `lobsteR`, you need:
+
+1. A registered account at [lobsterdata.com](https://lobsterdata.com)
+2. Your login credentials (email and password)
+3. Required system dependencies for data extraction (see Installation section)
+
+## Installation
+
+Install the development version from GitHub:
+
+```{r installation}
+# install.packages("pak")
+pak::pak("voigtstefan/lobsteR")
+```
+
+### System Dependencies
+
+On Unix-based systems (Linux, macOS), you may need to install system dependencies for the `archive` package which handles `.7z` file extraction:
+
+**Debian/Ubuntu:**
+```bash
+sudo apt-get update
+sudo apt-get install -y libarchive-dev
+```
+
+**macOS (using Homebrew):**
+```bash
+brew install libarchive
+```
+
+## Basic Workflow
+
+### Step 1: Authentication
+
+First, load the package and authenticate with your LOBSTER account:
+
+```{r auth}
+library(lobsteR)
+
+# Authenticate with lobsterdata.com
+my_account <- account_login(
+  login = "your-email@example.com",
+  pwd = "your-password"
+)
+```
+
+**Security Tip:** Store your credentials in the `.Renviron` file to avoid hardcoding them:
+
+```{r env-vars}
+# In your .Renviron file (edit with usethis::edit_r_environ()):
+# LOBSTER_USER=your-email@example.com
+# LOBSTER_PWD=your-password
+
+# Then use:
+my_account <- account_login(
+  login = Sys.getenv("LOBSTER_USER"),
+  pwd = Sys.getenv("LOBSTER_PWD")
+)
+```
+
+### Step 2: Create a Data Request
+
+Specify which data you want to download using `request_query()`:
+
+```{r request}
+# Request 10 levels of order book data for AAPL
+data_request <- request_query(
+  symbol = "AAPL",
+  start_date = "2024-01-02",
+  end_date = "2024-01-05",
+  level = 10
+)
+
+# View the request
+print(data_request)
+```
+
+The function automatically:
+- Expands date ranges to individual trading days
+- Removes weekends and NYSE holidays
+- Optionally filters out already-downloaded data
+
+#### Multiple Symbols
+
+You can request data for multiple symbols simultaneously:
+
+```{r multi-symbols}
+data_request <- request_query(
+  symbol = c("AAPL", "MSFT", "GOOGL"),
+  start_date = "2024-01-02",
+  end_date = "2024-01-05",
+  level = 10
+)
+```
+
+#### Avoiding Duplicate Requests
+
+To avoid re-requesting data you already have, pass your archive to `request_query()`:
+
+```{r avoid-duplicates}
+# Get current archive
+archive <- account_archive(my_account)
+
+# Create request, excluding data already in archive
+data_request <- request_query(
+  symbol = "AAPL",
+  start_date = "2024-01-02",
+  end_date = "2024-01-31",
+  level = 10,
+  account_archive = archive
+)
+```
+
+### Step 3: Submit the Request
+
+Submit your request to LOBSTER's servers:
+
+```{r submit}
+request_submit(
+  account_login = my_account,
+  request = data_request
+)
+```
+
+The server will process your request asynchronously. Depending on the data volume and server load, this may take from a few minutes to several hours. You can close your R session; the processing continues on LOBSTER's servers.
+
+### Step 4: Check Your Archive
+
+Once processing is complete, the data appears in your account archive:
+
+```{r archive}
+# Retrieve your archive
+archive <- account_archive(my_account)
+
+# View available data
+print(archive)
+
+# Filter for specific symbols
+library(dplyr)
+aapl_data <- archive %>%
+  filter(symbol == "AAPL")
+```
+
+### Step 5: Download the Data
+
+Download the processed data files:
+
+```{r download}
+# Create a directory for the data
+dir.create("data/lobster", recursive = TRUE, showWarnings = FALSE)
+
+# Download all AAPL data
+data_download(
+  requested_data = archive %>% filter(symbol == "AAPL"),
+  account_login = my_account,
+  path = "data/lobster"
+)
+```
+
+By default, `data_download()`:
+- Downloads `.7z` archives
+- Automatically extracts the files
+- Deletes the archive after extraction
+
+To keep the compressed files, use `unzip = FALSE`:
+
+```{r download-no-unzip}
+data_download(
+  requested_data = archive %>% filter(symbol == "AAPL"),
+  account_login = my_account,
+  path = "data/lobster",
+  unzip = FALSE
+)
+```
+
+## Understanding LOBSTER Data Files
+
+Each download produces two CSV files per trading day:
+
+1. **Message file** (`SYMBOL_YYYY-MM-DD_LEVEL_message.csv`): Contains all order events (submissions, cancellations, executions)
+2. **Order book file** (`SYMBOL_YYYY-MM-DD_LEVEL_orderbook.csv`): Contains order book snapshots at each event
+
+### Reading the Data
+
+```{r read-data}
+# Example: Read AAPL message file
+messages <- read.csv("data/lobster/AAPL_2024-01-02_10_message.csv", header = FALSE)
+
+# Example: Read AAPL orderbook file
+orderbook <- read.csv("data/lobster/AAPL_2024-01-02_10_orderbook.csv", header = FALSE)
+```
+
+For detailed information about the LOBSTER data format, see the [LOBSTER documentation](https://lobsterdata.com/info/DataStructure.php).
+
+## Advanced Usage
+
+### Large Date Ranges with Monthly Frequency
+
+For very large date ranges, you can request data at a lower frequency to reduce the number of individual requests:
+
+```{r monthly-freq}
+data_request <- request_query(
+  symbol = "AAPL",
+  start_date = "2024-01-01",
+  end_date = "2024-12-31",
+  level = 10,
+  frequency = "1 month"
+)
+```
+
+### Batch Processing Multiple Symbols
+
+```{r batch-process}
+symbols <- c("AAPL", "MSFT", "GOOGL", "AMZN", "META")
+
+# Create requests for all symbols
+requests <- lapply(symbols, function(sym) {
+  request_query(
+    symbol = sym,
+    start_date = "2024-01-02",
+    end_date = "2024-01-05",
+    level = 10
+  )
+})
+
+# Combine all requests
+all_requests <- do.call(rbind, requests)
+
+# Submit all at once
+request_submit(
+  account_login = my_account,
+  request = all_requests
+)
+```
+
+## Best Practices
+
+1. **Store credentials securely**: Use `.Renviron` or environment variables
+2. **Check your archive first**: Avoid duplicate requests by using `account_archive = archive` in `request_query()`
+3. **Be patient**: Large data requests can take significant time to process
+4. **Monitor disk space**: LOBSTER data files can be very large
+5. **Start small**: Test your workflow with a small date range first
+
+## Further Analysis
+
+After downloading LOBSTER data, you may want to:
+
+- Use the [`highfrequency`](https://cran.r-project.org/package=highfrequency) package for econometric analysis
+- Calculate market microstructure metrics
+- Analyze order flow and liquidity
+- Study price impact and execution quality
+
+## Getting Help
+
+- File issues at: <https://github.com/voigtstefan/lobsteR/issues>
+- LOBSTER documentation: <https://lobsterdata.com/info/DataStructure.php>
+- Package documentation: `?lobsteR` or visit <https://voigtstefan.github.io/lobsteR/>
