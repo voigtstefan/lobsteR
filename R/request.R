@@ -100,8 +100,6 @@ request_query <- function(
 
   param <- list(symbol, as.Date(start_date), as.Date(end_date), level)
 
-  param_length <- sapply(param, length) |> unique()
-
   request <- pmap_df(
     .l = param,
     ~ {
@@ -294,7 +292,7 @@ data_download <- function(
 
   download <- requested_data$download
 
-  for (i in 1:length(download)) {
+  for (i in seq_along(download)) {
     session <- session_jump_to(account_login$submission, download[i])$response
     filename = paste0(path, "/", basename(sub(".7z(.*)", ".7z", download[i])))
 

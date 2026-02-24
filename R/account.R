@@ -69,7 +69,7 @@ account_login <- function(login, pwd) {
   )
 
   if (valid) {
-    cat("# Login on lobsterdata.com successful")
+    message("Login on lobsterdata.com successful")
   }
   list(
     valid = valid,

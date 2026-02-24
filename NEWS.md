@@ -1,3 +1,3 @@
-# lobsteR 0.1.0
+# lobsteR 0.9.0
 
 * Initial CRAN submission.
