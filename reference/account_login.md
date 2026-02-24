@@ -22,25 +22,11 @@ account_login(login, pwd)
 
 ## Value
 
-A list containing authentication details:
-
-- valid:
-
-  Logical indicating if login was successful
-
-- session:
-
-  httr session object for the authenticated session
-
-- submission:
-
-  httr response object from the login submission
-
 A named list with components:
 
 - valid:
 
-  logical(1) — TRUE when authentication succeeded.
+  logical(1) — `TRUE` when authentication succeeded.
 
 - session:
 
@@ -52,46 +38,38 @@ A named list with components:
 
 ## Details
 
-The function performs form-based authentication by:
-
-1.  Creating a session with the LOBSTER sign-in page
-
-2.  Filling and submitting the login form
-
-3.  Validating the response URL to confirm successful authentication
-
-A successful login redirects to the request data page. The returned
-object should be passed to other functions like
-[`account_archive`](https://voigtstefan.github.io/lobsteR/reference/account_archive.md)
-and
-[`request_submit`](https://voigtstefan.github.io/lobsteR/reference/request_submit.md).
-
 The function submits the sign-in form using an AJAX header
-(x-requested-with: XMLHttpRequest) and confirms success by checking the
-redirect URL. Network connectivity and valid credentials are required.
+(`x-requested-with: XMLHttpRequest`) and confirms success by checking
+the redirect URL. Network connectivity and valid credentials are
+required.
+
+Store credentials in your `.Renviron` file (`usethis::edit_r_environ()`)
+to avoid hardcoding them in scripts:
+
+    LOBSTER_USER=you@example.com
+    LOBSTER_PWD=your-password
 
 ## See also
 
-[`account_archive`](https://voigtstefan.github.io/lobsteR/reference/account_archive.md),
-[`request_submit`](https://voigtstefan.github.io/lobsteR/reference/request_submit.md)
+[`account_archive()`](https://voigtstefan.github.io/lobsteR/reference/account_archive.md),
+[`request_submit()`](https://voigtstefan.github.io/lobsteR/reference/request_submit.md)
 
 ## Examples
 
 ``` r
 if (FALSE) { # \dontrun{
-# Login to LOBSTER account
-my_account <- account_login("user@example.com", "mypassword")
+acct <- account_login(
+  login = Sys.getenv("LOBSTER_USER"),
+  pwd   = Sys.getenv("LOBSTER_PWD")
+)
 
-# Check if login was successful
-if (my_account$valid) {
-  message("Successfully logged in!")
-}
-} # }
-
-if (FALSE) { # \dontrun{
-acct <- account_login("you@example.com", "your-password")
 if (acct$valid) {
+  # Retrieve available datasets in the archive
   archive <- account_archive(acct)
+
+  # Build and submit a new data request
+  req <- request_query("AAPL", "2023-01-03", "2023-01-05", level = 1)
+  request_submit(acct, req)
 }
 } # }
 ```

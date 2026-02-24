@@ -11,7 +11,7 @@ lobsterdata.com and validates the login was successful."><meta property="og:imag
 
     <a class="navbar-brand me-2" href="../index.html">lobsteR</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.9.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -61,18 +61,8 @@ lobsterdata.com and validates the login was successful.</p>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A list containing authentication details:</p><dl><dt>valid</dt>
-<dd><p>Logical indicating if login was successful</p></dd>
-
-<dt>session</dt>
-<dd><p>httr session object for the authenticated session</p></dd>
-
-<dt>submission</dt>
-<dd><p>httr response object from the login submission</p></dd>
-
-
-</dl><p>A named list with components:</p><dl><dt>valid</dt>
-<dd><p>logical(1) — TRUE when authentication succeeded.</p></dd>
+    <p>A named list with components:</p><dl><dt>valid</dt>
+<dd><p>logical(1) — <code>TRUE</code> when authentication succeeded.</p></dd>
 
 <dt>session</dt>
 <dd><p>rvest session object used for further navigation.</p></dd>
@@ -84,39 +74,37 @@ lobsterdata.com and validates the login was successful.</p>
 </dl></div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>The function performs form-based authentication by:</p><ol><li><p>Creating a session with the LOBSTER sign-in page</p></li>
-<li><p>Filling and submitting the login form</p></li>
-<li><p>Validating the response URL to confirm successful authentication</p></li>
-</ol><p>A successful login redirects to the request data page. The returned object
-should be passed to other functions like <code><a href="account_archive.html">account_archive</a></code> and
-<code><a href="request_submit.html">request_submit</a></code>.</p>
-<p>The function submits the sign-in form using an AJAX header
-(x-requested-with: XMLHttpRequest) and confirms success by checking the
+    <p>The function submits the sign-in form using an AJAX header
+(<code>x-requested-with: XMLHttpRequest</code>) and confirms success by checking the
 redirect URL. Network connectivity and valid credentials are required.</p>
+<p>Store credentials in your <code>.Renviron</code> file
+(<code>usethis::edit_r_environ()</code>) to avoid hardcoding them in scripts:</p>
+<p></p><div class="sourceCode"><pre><code><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a>LOBSTER_USER<span class="ot">=</span>you<span class="sc">@</span>example.com</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>LOBSTER_PWD<span class="ot">=</span>your<span class="sc">-</span>password</span></code></pre><p></p></div>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="account_archive.html">account_archive</a></code>, <code><a href="request_submit.html">request_submit</a></code></p></div>
+    <div class="dont-index"><p><code><a href="account_archive.html">account_archive()</a></code>, <code><a href="request_submit.html">request_submit()</a></code></p></div>
     </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
-<span class="r-in"><span><span class="co"># Login to LOBSTER account</span></span></span>
-<span class="r-in"><span><span class="va">my_account</span> <span class="op">&lt;-</span> <span class="fu">account_login</span><span class="op">(</span><span class="st">"user@example.com"</span>, <span class="st">"mypassword"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">acct</span> <span class="op">&lt;-</span> <span class="fu">account_login</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  login <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.getenv.html" class="external-link">Sys.getenv</a></span><span class="op">(</span><span class="st">"LOBSTER_USER"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  pwd   <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.getenv.html" class="external-link">Sys.getenv</a></span><span class="op">(</span><span class="st">"LOBSTER_PWD"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Check if login was successful</span></span></span>
-<span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="va">my_account</span><span class="op">$</span><span class="va">valid</span><span class="op">)</span> <span class="op">{</span></span></span>
-<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/message.html" class="external-link">message</a></span><span class="op">(</span><span class="st">"Successfully logged in!"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="op">}</span></span></span>
-<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
-<span class="r-in"><span><span class="va">acct</span> <span class="op">&lt;-</span> <span class="fu">account_login</span><span class="op">(</span><span class="st">"you@example.com"</span>, <span class="st">"your-password"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="va">acct</span><span class="op">$</span><span class="va">valid</span><span class="op">)</span> <span class="op">{</span></span></span>
+<span class="r-in"><span>  <span class="co"># Retrieve available datasets in the archive</span></span></span>
 <span class="r-in"><span>  <span class="va">archive</span> <span class="op">&lt;-</span> <span class="fu"><a href="account_archive.html">account_archive</a></span><span class="op">(</span><span class="va">acct</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span>  <span class="co"># Build and submit a new data request</span></span></span>
+<span class="r-in"><span>  <span class="va">req</span> <span class="op">&lt;-</span> <span class="fu"><a href="request_query.html">request_query</a></span><span class="op">(</span><span class="st">"AAPL"</span>, <span class="st">"2023-01-03"</span>, <span class="st">"2023-01-05"</span>, level <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="request_submit.html">request_submit</a></span><span class="op">(</span><span class="va">acct</span>, <span class="va">req</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
+<span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
