@@ -19,6 +19,7 @@ test_that("account_login returns expected structure when rvest calls succeed (st
 })
 
 test_that("account_archive parses archive table and filters zero-size rows", {
+  testthat::skip_if_not_installed("xml2")
   html_fixture <- '
   <html>
     <body>

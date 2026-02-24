@@ -1,12 +1,13 @@
 Type: Package
 Package: lobsteR
-Title: Access and Process LOBSTER High-Frequency Data
+Title: Access and Process 'LOBSTER' High-Frequency Data
 Version: 0.9.0
 Authors@R: c(
     person("Karol", "Kulma", , "kulmakarol@gmail.com", role = c("aut")),
     person("Stefan", "Voigt", , "stefan.voigt@econ.ku.dk", role = c("aut", "cre", "cph"))
   )
-Description: Provides tools to authenticate with <https://app.lobsterdata.com/>,
+Description: Provides tools to authenticate with 'LOBSTER' (Limit Order Book
+    System - The Efficient Reconstruction, <https://app.lobsterdata.com/>),
     request, download, and process high-frequency limit order book data.
     Streamlines the end-to-end workflow from data request to analysis-ready
     datasets. For advanced high-frequency econometric analysis, see the
