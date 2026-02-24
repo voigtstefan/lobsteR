@@ -4,7 +4,7 @@ test_that("account_login returns expected structure when rvest calls succeed (st
     html_form = function(x) list(list()), # one empty form
     html_form_set = function(form, login, pwd) form, # return the form unchanged
     session_submit = function(x, form, submit, add_headers) {
-      list(url = "https://lobsterdata.com/requestdata.php")
+      list(url = "https://data.lobsterdata.com/requestdata.php")
     },
     add_headers = function(...) NULL,
     .env = asNamespace("lobsteR"),

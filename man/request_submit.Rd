@@ -15,12 +15,33 @@ response required for navigation.}
 columns: symbol, start_date, end_date, level.}
 }
 \value{
-Invisibly returns NULL. The primary effect is to submit requests to
-the remote service; any responses are not returned by this function.
+Invisibly returns \code{NULL}. The primary effect is to queue requests on
+the LOBSTER server; processing happens server-side and may take some time.
+Use \code{\link[=account_archive]{account_archive()}} afterwards to check when files become available.
 }
 \description{
 Send the prepared request rows to lobsterdata.com using the authenticated
 session contained in \code{account_login}. Each row in \code{request} is submitted
-as a separate request. This function performs network side effects and
+as a separate HTTP request. The function performs network side effects and
 returns invisibly.
+}
+\examples{
+\dontrun{
+acct <- account_login(
+  login = Sys.getenv("LOBSTER_USER"),
+  pwd   = Sys.getenv("LOBSTER_PWD")
+)
+
+# Build a request and submit it
+req <- request_query("AAPL", "2023-01-03", "2023-01-05", level = 1)
+request_submit(acct, req)
+
+# LOBSTER processes the request server-side; this may take several minutes.
+# Once done, the files appear in the account archive.
+archive <- account_archive(acct)
+}
+
+}
+\seealso{
+\code{\link[=account_login]{account_login()}}, \code{\link[=request_query]{request_query()}}, \code{\link[=account_archive]{account_archive()}}
 }

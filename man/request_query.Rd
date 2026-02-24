@@ -15,42 +15,48 @@ request_query(
 )
 }
 \arguments{
-\item{symbol}{character vector One or more ticker symbols (e.g. "AAPL").
+\item{symbol}{character vector One or more ticker symbols (e.g. \code{"AAPL"}).
 Each element is paired with the corresponding elements of \code{start_date},
 \code{end_date} and \code{level}. Recycling follows base R rules; mismatched lengths
 should be avoided.}
 
 \item{start_date}{Date-like (Date or character) Start date(s) for the
-requested range(s). Each start date is converted with \code{as.Date()}.}
+requested range(s). Converted with \code{as.Date()}.}
 
 \item{end_date}{Date-like (Date or character) End date(s) for the
-requested range(s). Each end date is converted with \code{as.Date()}.}
+requested range(s). Converted with \code{as.Date()}.}
 
-\item{level}{integer(1) Required order-book snapshot level (e.g. 1, 2).}
+\item{level}{integer(1) Required order-book snapshot level (e.g. \code{1}, \code{2},
+\code{10}).}
 
-\item{validate}{logical(1) If TRUE (default) remove weekend days and NYSE
-holidays and — when \code{account_archive} is supplied — remove days already
-present in the account archive.}
+\item{validate}{logical(1) If \code{TRUE} (default) remove weekend days and NYSE
+holidays. When \code{account_archive} is also supplied, days already present in
+the archive are additionally removed to avoid duplicate requests.}
 
 \item{account_archive}{data.frame or tibble, optional Archive table as
-returned by \code{\link[=account_archive]{account_archive()}}. When provided, rows that match
-(symbol, start_date, end_date, level, size, download, id) are excluded
-from the returned request.}
+returned by \code{\link[=account_archive]{account_archive()}}. When provided, rows already present in
+the archive (matched on symbol, start_date, end_date, and level) are
+excluded.}
 
-\item{frequency}{character(1), defaults to "1 day". Frequency string passed to request data.
-For large data ranges, it may be beneficial to request data at a lower frequency,
-e.g. "1 month" to reduce the number of requests to the lobster server.}
+\item{frequency}{character(1) Frequency string passed to \code{seq.Date()}.
+Defaults to \code{"1 day"} (one row per trading day). Use \code{"1 month"} for
+large date ranges to reduce the number of individual requests sent to the
+LOBSTER server. Validation (\code{validate = TRUE}) is only applied when
+\code{frequency == "1 day"}.}
 }
 \value{
-A tibble (data.frame) with one row per trading day and columns:
+A data.frame with one row per period and columns:
 \itemize{
-\item symbol: character
-\item start_date: Date
-\item end_date: Date (equal to start_date for daily requests)
-\item level: integer
+\item \code{symbol}: character
+\item \code{start_date}: Date — start of the period (equal to \code{end_date} for daily
+requests)
+\item \code{end_date}: Date — end of the period
+\item \code{level}: integer
 }
 
-The function returns only the days that remain after optional validation.
+When \code{validate = TRUE} and \code{frequency = "1 day"}, weekend days and NYSE
+holidays are silently removed, so the output typically contains fewer rows
+than the full calendar span of the requested date range.
 }
 \description{
 Construct a request describing which trading-day files to ask LOBSTER for.
@@ -60,22 +66,45 @@ requested days by removing weekends, NYSE holidays and any days already
 present in the provided account archive.
 }
 \details{
-The function does not perform network activity. Use
-\code{\link[=request_submit]{request_submit()}} to send the generated requests to the authenticated
-LOBSTER session.
+This function performs no network activity. Use \code{\link[=request_submit]{request_submit()}}
+to send the generated request to an authenticated LOBSTER session.
 }
 \examples{
-\dontrun{
-# Single symbol, one-month range
-req <- request_query("AAPL", "2020-01-01", "2020-01-31", level = 2)
+# Single symbol, one-week range (weekends and holidays removed automatically)
+request_query("AAPL", "2023-01-02", "2023-01-06", level = 1)
 
-# Multiple symbols / ranges (vectorised inputs)
+# Multiple symbols with paired date ranges
+request_query(
+  symbol     = c("AAPL", "MSFT"),
+  start_date = c("2023-01-03", "2023-02-01"),
+  end_date   = c("2023-01-05", "2023-02-03"),
+  level      = 1
+)
+
+# Monthly frequency for a large date range (no per-day expansion)
+request_query(
+  symbol     = "SPY",
+  start_date = "2022-01-01",
+  end_date   = "2022-12-31",
+  level      = 10,
+  frequency  = "1 month"
+)
+
+\dontrun{
+# Exclude days already in the archive to avoid duplicate requests
+acct    <- account_login(Sys.getenv("LOBSTER_USER"), Sys.getenv("LOBSTER_PWD"))
+archive <- account_archive(acct)
+
 req <- request_query(
-  symbol = c("AAPL", "MSFT"),
-  start_date = c("2020-01-01", "2020-02-01"),
-  end_date = c("2020-01-03", "2020-02-03"),
-  level = c(1, 1)
+  symbol          = "AAPL",
+  start_date      = "2023-01-02",
+  end_date        = "2023-01-31",
+  level           = 1,
+  account_archive = archive
 )
 }
 
+}
+\seealso{
+\code{\link[=request_submit]{request_submit()}}, \code{\link[=account_archive]{account_archive()}}, \code{\link[=account_login]{account_login()}}
 }

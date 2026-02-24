@@ -1,7 +1,7 @@
 Type: Package
 Package: lobsteR
 Title: Access and Process LOBSTER high-frequency data
-Version: 0.1.0
+Version: 0.9.0
 Authors@R: c(
     person("Karol", "Kulma", , "kulmakarol@gmail.com", role = c("aut")),
     person("Stefan", "Voigt", , "stefan.voigt@econ.ku.dk", role = c("aut", "cre", "cph"))
@@ -29,6 +29,7 @@ Suggests:
     knitr,
     rmarkdown,
     testthat (>= 3.0.0)
+    xml2
 VignetteBuilder: 
     knitr
 Config/testthat/edition: 3

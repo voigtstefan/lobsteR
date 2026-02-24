@@ -1,112 +1,150 @@
+---
+output: github_document
+---
+
+
 
 # lobsteR <img src="man/figures/logo.png" align="right" height="139" alt="" />
 
 <!-- badges: start -->
-
-[![Codecov test
-coverage](https://codecov.io/gh/voigtstefan/lobsteR/graph/badge.svg)](https://app.codecov.io/gh/voigtstefan/lobsteR)
+[![Codecov test coverage](https://codecov.io/gh/voigtstefan/lobsteR/graph/badge.svg)](https://app.codecov.io/gh/voigtstefan/lobsteR)
 [![R-CMD-check](https://github.com/voigtstefan/lobsteR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/voigtstefan/lobsteR/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
-The goal of lobsteR is to provide a tidy framework to request data from
-lobsterdata.com, to download, unzip, and clean the data. The package
-focuses on the core functionalities required to get LOBSTER data ready
-fast, for subsequent typical high-frequency econometrics applications,
-we refer to the `highfrequency` package.
+`lobsteR` provides a tidy workflow for requesting, downloading, and reading
+[LOBSTER](https://lobsterdata.com) high-frequency order book data directly
+from R. LOBSTER reconstructs full limit order books from NASDAQ historical
+message data and delivers them as pairs of message files and order book
+snapshot files. This package handles the end-to-end pipeline — authentication,
+request submission, archive retrieval, and file download — so you can focus on
+analysis. For downstream high-frequency econometrics, see the
+[`highfrequency`](https://CRAN.R-project.org/package=highfrequency) package.
 
-1.  Install the package (development version):
+**Prerequisites:** an active account at
+[lobsterdata.com](https://lobsterdata.com) is required to request and download
+data.
+
+## Installation
 
 You can install the development version of lobsteR from
-[GitHub](https://github.com/) with:
+[GitHub](https://github.com/voigtstefan/lobsteR) with:
+
 
 ``` r
 # install.packages("pak")
 pak::pak("voigtstefan/lobsteR")
 ```
 
-## Request and download data from lobsterdata.com
+## Workflow
 
-With `lobsteR` you can connect easily connect with lobsterdata.com using
-your own credentials.
 
 ``` r
 library(lobsteR)
 ```
 
+### 1. Authenticate
+
+Store your credentials in `.Renviron` (open it with
+`usethis::edit_r_environ()`) to avoid hardcoding them in scripts:
+
+```
+LOBSTER_USER=you@example.com
+LOBSTER_PWD=your-password
+```
+
+Then authenticate:
+
+
 ``` r
 lobster_login <- account_login(
-  login = Sys.getenv("user"), # replace with your username
-  pwd   = Sys.getenv("pwd")   # replace with your passworduse_github_links(overwrite = FALSE)
-
+  login = Sys.getenv("LOBSTER_USER"),
+  pwd   = Sys.getenv("LOBSTER_PWD")
 )
-#> # Login on lobsterdata.com successful
 ```
 
-I recommend to store your credentials in the `.Renviron` file to avoid
-hardcoding them in your scripts.
+### 2. Build a request
 
-Next, we request some data from lobsterdata.com, e.g., message-level
-data from *META* for the period from May 1st, 2023 until May 3rd, 2023.
-´level´ corresponds to the requested number of orderbook snapshot
-levels.
+`request_query()` expands a symbol and date range into one row per trading day,
+automatically removing weekends and NYSE holidays. `level` sets the number of
+order book price levels included in the snapshot files (e.g. `10` returns the
+top 10 bid and ask levels).
+
 
 ``` r
-data_request <- request_query(
-  symbol = "MSFT",
-  start_date = "2025-05-01",
-  end_date = "2025-05-15",
-  level = 10)
+library(lobsteR)
 
-data_request
+request_query(
+  symbol     = "MSFT",
+  start_date = "2023-01-02",
+  end_date   = "2023-01-13",
+  level      = 10
+)
 #>    symbol start_date   end_date level
-#> 1    MSFT 2025-05-01 2025-05-01    10
-#> 2    MSFT 2025-05-02 2025-05-02    10
-#> 5    MSFT 2025-05-05 2025-05-05    10
-#> 6    MSFT 2025-05-06 2025-05-06    10
-#> 7    MSFT 2025-05-07 2025-05-07    10
-#> 8    MSFT 2025-05-08 2025-05-08    10
-#> 9    MSFT 2025-05-09 2025-05-09    10
-#> 12   MSFT 2025-05-12 2025-05-12    10
-#> 13   MSFT 2025-05-13 2025-05-13    10
-#> 14   MSFT 2025-05-14 2025-05-14    10
-#> 15   MSFT 2025-05-15 2025-05-15    10
+#> 2    MSFT 2023-01-03 2023-01-03    10
+#> 3    MSFT 2023-01-04 2023-01-04    10
+#> 4    MSFT 2023-01-05 2023-01-05    10
+#> 5    MSFT 2023-01-06 2023-01-06    10
+#> 8    MSFT 2023-01-09 2023-01-09    10
+#> 9    MSFT 2023-01-10 2023-01-10    10
+#> 10   MSFT 2023-01-11 2023-01-11    10
+#> 11   MSFT 2023-01-12 2023-01-12    10
+#> 12   MSFT 2023-01-13 2023-01-13    10
 ```
 
-Next, submit the requests to LOBSTER (server will process them; this can
-take time):
+For large date ranges, use `frequency = "1 month"` to submit one request per
+month rather than one per day, which reduces load on the LOBSTER server.
+
+### 3. Submit the request
+
 
 ``` r
-request_submit(account_login = lobster_login,
-               request = data_request)
-```
-
-After submitting the request, lobsterdata.com will work on providing the
-order book snapshots. Depending on the number of messages to process,
-this may take some time. You can close the session during the time, the
-processing will be done in the background on the servers of Lobster.
-Once done, the requested data is available in your account archive -
-ready to download!
-
-``` r
-lobster_archive <- account_archive(account_login = lobster_login)
-```
-
-When downloading, the data is unzipped automatically (this can be
-omitted using `unzip = FALSE`)
-
-``` r
-data_download(
-  requested_data = lobster_archive |> filter(symbol == "MSFT"),
+request_submit(
   account_login = lobster_login,
-  path = "data-lobster")
+  request       = data_request
+)
 ```
 
-## Data processing on an Unix system
+LOBSTER processes requests server-side. Depending on the volume of messages,
+this can take anywhere from a few minutes to several hours. You can safely
+close your R session while waiting — processing continues on the LOBSTER
+servers.
 
-To unzip data, `lobsteR` relies on the `archive` package which, in turn,
-requires a couple of system dependencies to be installed. On a
-Debian-based linux system, you can install the required dependencies
-using the following commands:
+### 4. Check the archive
+
+Once processing is complete, the files appear in your account archive:
+
+
+``` r
+lobster_archive <- account_archive(account = lobster_login)
+lobster_archive
+```
+
+The returned tibble has one row per available dataset with columns `id`,
+`symbol`, `start_date`, `end_date`, `level`, `size`, and `download`.
+
+### 5. Download
+
+
+``` r
+dir.create("data-lobster", showWarnings = FALSE)
+
+data_download(
+  requested_data = dplyr::filter(lobster_archive, symbol == "MSFT"),
+  account_login  = lobster_login,
+  path           = "data-lobster"
+)
+```
+
+Downloaded `.7z` archives are extracted automatically. Pass `unzip = FALSE` to
+keep the raw archives. Note that extraction runs in a background process, so
+the function returns before the files are fully written to disk — check the
+`path` directory before proceeding with analysis.
+
+## System dependencies on Linux
+
+The `archive` package used for `.7z` extraction requires system libraries. On
+a Debian/Ubuntu system:
+
 
 ``` bash
 sudo apt-get update

@@ -12,16 +12,9 @@ account_login(login, pwd)
 \item{pwd}{character(1) Account password.}
 }
 \value{
-A list containing authentication details:
-\describe{
-\item{valid}{Logical indicating if login was successful}
-\item{session}{httr session object for the authenticated session}
-\item{submission}{httr response object from the login submission}
-}
-
 A named list with components:
 \describe{
-\item{valid}{logical(1) — TRUE when authentication succeeded.}
+\item{valid}{logical(1) — \code{TRUE} when authentication succeeded.}
 \item{session}{rvest session object used for further navigation.}
 \item{submission}{rvest response returned after the sign-in form was submitted.}
 }
@@ -32,39 +25,35 @@ data requests. This function handles the authentication process with
 lobsterdata.com and validates the login was successful.
 }
 \details{
-The function performs form-based authentication by:
-\enumerate{
-\item Creating a session with the LOBSTER sign-in page
-\item Filling and submitting the login form
-\item Validating the response URL to confirm successful authentication
-}
-
-A successful login redirects to the request data page. The returned object
-should be passed to other functions like \code{\link{account_archive}} and
-\code{\link{request_submit}}.
-
 The function submits the sign-in form using an AJAX header
-(x-requested-with: XMLHttpRequest) and confirms success by checking the
+(\code{x-requested-with: XMLHttpRequest}) and confirms success by checking the
 redirect URL. Network connectivity and valid credentials are required.
+
+Store credentials in your \code{.Renviron} file
+(\code{usethis::edit_r_environ()}) to avoid hardcoding them in scripts:
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{LOBSTER_USER=you@example.com
+LOBSTER_PWD=your-password
+}\if{html}{\out{</div>}}
 }
 \examples{
 \dontrun{
-# Login to LOBSTER account
-my_account <- account_login("user@example.com", "mypassword")
+acct <- account_login(
+  login = Sys.getenv("LOBSTER_USER"),
+  pwd   = Sys.getenv("LOBSTER_PWD")
+)
 
-# Check if login was successful
-if (my_account$valid) {
-  message("Successfully logged in!")
-}
-}
-
-\dontrun{
-acct <- account_login("you@example.com", "your-password")
 if (acct$valid) {
+  # Retrieve available datasets in the archive
   archive <- account_archive(acct)
+
+  # Build and submit a new data request
+  req <- request_query("AAPL", "2023-01-03", "2023-01-05", level = 1)
+  request_submit(acct, req)
 }
 }
+
 }
 \seealso{
-\code{\link{account_archive}}, \code{\link{request_submit}}
+\code{\link[=account_archive]{account_archive()}}, \code{\link[=request_submit]{request_submit()}}
 }

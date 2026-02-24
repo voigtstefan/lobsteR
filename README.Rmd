@@ -18,86 +18,124 @@ knitr::opts_chunk$set(
 [![R-CMD-check](https://github.com/voigtstefan/lobsteR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/voigtstefan/lobsteR/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
-The goal of lobsteR is to provide a tidy framework to request data from
-lobsterdata.com, to download, unzip, and clean the data. The package
-focuses on the core functionalities required to get LOBSTER data ready
-fast, for subsequent typical high-frequency econometrics applications,
-we refer to the `highfrequency` package.
+`lobsteR` provides a tidy workflow for requesting, downloading, and reading
+[LOBSTER](https://lobsterdata.com) high-frequency order book data directly
+from R. LOBSTER reconstructs full limit order books from NASDAQ historical
+message data and delivers them as pairs of message files and order book
+snapshot files. This package handles the end-to-end pipeline — authentication,
+request submission, archive retrieval, and file download — so you can focus on
+analysis. For downstream high-frequency econometrics, see the
+[`highfrequency`](https://CRAN.R-project.org/package=highfrequency) package.
 
-1. Install the package (development version):
+**Prerequisites:** an active account at
+[lobsterdata.com](https://lobsterdata.com) is required to request and download
+data.
 
-You can install the development version of lobsteR from [GitHub](https://github.com/) with:
+## Installation
+
+You can install the development version of lobsteR from
+[GitHub](https://github.com/voigtstefan/lobsteR) with:
 
 ```{r eval = FALSE}
 # install.packages("pak")
 pak::pak("voigtstefan/lobsteR")
 ```
 
-## Request and download data from lobsterdata.com
+## Workflow
 
-With `lobsteR` you can connect easily connect with lobsterdata.com using
-your own credentials.
-
-```{r}
+```{r eval = FALSE}
 library(lobsteR)
 ```
 
-```{r}
-lobster_login <- account_login(
-  login = Sys.getenv("user"), # replace with your username
-  pwd   = Sys.getenv("pwd")   # replace with your passworduse_github_links(overwrite = FALSE)
+### 1. Authenticate
 
+Store your credentials in `.Renviron` (open it with
+`usethis::edit_r_environ()`) to avoid hardcoding them in scripts:
+
+```
+LOBSTER_USER=you@example.com
+LOBSTER_PWD=your-password
+```
+
+Then authenticate:
+
+```{r eval = FALSE}
+lobster_login <- account_login(
+  login = Sys.getenv("LOBSTER_USER"),
+  pwd   = Sys.getenv("LOBSTER_PWD")
 )
 ```
 
-I recommend to store your credentials in the `.Renviron` file to avoid hardcoding them in your scripts.
+### 2. Build a request
 
-Next, we request some data from lobsterdata.com, e.g., message-level
-data from *META* for the period from May 1st, 2023 until May 3rd, 2023.
-´level´ corresponds to the requested number of orderbook snapshot
-levels.
-
-```{r}
-data_request <- request_query(
-  symbol = "MSFT",
-  start_date = "2025-05-01",
-  end_date = "2025-05-15",
-  level = 10)
-
-data_request
-```
-
-Next, submit the requests to LOBSTER (server will process them; this can take time):
+`request_query()` expands a symbol and date range into one row per trading day,
+automatically removing weekends and NYSE holidays. `level` sets the number of
+order book price levels included in the snapshot files (e.g. `10` returns the
+top 10 bid and ask levels).
 
 ```{r}
-request_submit(account_login = lobster_login,
-               request = data_request)
+library(lobsteR)
+
+request_query(
+  symbol     = "MSFT",
+  start_date = "2023-01-02",
+  end_date   = "2023-01-13",
+  level      = 10
+)
 ```
 
-After submitting the request, lobsterdata.com will work on providing the
-order book snapshots. Depending on the number of messages to process,
-this may take some time. You can close the session during the time, the processing will be done in the background on the servers of Lobster. 
-Once done, the requested data is available in your account archive - ready to download!
+For large date ranges, use `frequency = "1 month"` to submit one request per
+month rather than one per day, which reduces load on the LOBSTER server.
 
-```{r}
-lobster_archive <- account_archive(account_login = lobster_login)
-```
+### 3. Submit the request
 
-When downloading, the data is unzipped automatically (this can be omitted using `unzip = FALSE`)
-
-```{r eval= FALSE}
-data_download(
-  requested_data = lobster_archive |> filter(symbol == "MSFT"),
+```{r eval = FALSE}
+request_submit(
   account_login = lobster_login,
-  path = "data-lobster")
+  request       = data_request
+)
 ```
 
-## Data processing on an Unix system
+LOBSTER processes requests server-side. Depending on the volume of messages,
+this can take anywhere from a few minutes to several hours. You can safely
+close your R session while waiting — processing continues on the LOBSTER
+servers.
 
-To unzip data, `lobsteR` relies on the `archive` package which, in turn, requires a couple of system dependencies to be installed. On a Debian-based linux system, you can install the required dependencies using the following commands:
+### 4. Check the archive
 
-```{bash}
-#| eval: false
+Once processing is complete, the files appear in your account archive:
+
+```{r eval = FALSE}
+lobster_archive <- account_archive(account = lobster_login)
+lobster_archive
+```
+
+The returned tibble has one row per available dataset with columns `id`,
+`symbol`, `start_date`, `end_date`, `level`, `size`, and `download`.
+
+### 5. Download
+
+```{r eval = FALSE}
+dir.create("data-lobster", showWarnings = FALSE)
+
+data_download(
+  requested_data = dplyr::filter(lobster_archive, symbol == "MSFT"),
+  account_login  = lobster_login,
+  path           = "data-lobster"
+)
+```
+
+Downloaded `.7z` archives are extracted automatically. Pass `unzip = FALSE` to
+keep the raw archives. Note that extraction runs in a background process, so
+the function returns before the files are fully written to disk — check the
+`path` directory before proceeding with analysis.
+
+## System dependencies on Linux
+
+The `archive` package used for `.7z` extraction requires system libraries. On
+a Debian/Ubuntu system:
+
+```{bash, eval = FALSE}
 sudo apt-get update
 sudo apt-get install -y gpgv gnupg libarchive13t64 liblz4-dev libacl1-dev libext2fs-dev nettle-dev
 sudo apt-get install -y libarchive-dev

@@ -9,31 +9,61 @@ data_download(requested_data, account_login, path = ".", unzip = TRUE)
 \arguments{
 \item{requested_data}{data.frame A tibble with archive metadata that must
 include at minimum a \code{download} column (full download URL) and an \code{id}
-column used for tracking.}
+column. Typically a (filtered) result from \code{\link[=account_archive]{account_archive()}}.}
 
 \item{account_login}{list Output from \code{\link[=account_login]{account_login()}} containing the
 authenticated session used to fetch file content.}
 
-\item{path}{character(1) Filesystem path where downloaded files will be
-written and (if \code{unzip = TRUE}) extracted. The path must already exist.}
+\item{path}{character(1) Directory where downloaded files will be written
+and (if \code{unzip = TRUE}) extracted. The directory must already exist;
+create it first with \code{dir.create(path, recursive = TRUE)} if needed.}
 
-\item{unzip}{logical(1) If TRUE (default) extract the downloaded .7z archive
-using archive::archive_extract and delete the archive file afterwards.}
+\item{unzip}{logical(1) If \code{TRUE} (default) extract the downloaded \verb{.7z}
+archive using \code{archive::archive_extract()} and delete the archive file
+afterwards. Set to \code{FALSE} to keep the raw archive.}
 }
 \value{
-Invisibly returns NULL. Side effects: files written to \code{path} and
-background processes spawned to perform file writes / extraction.
+Invisibly returns \code{NULL}. Files are written to \code{path} by background
+R processes launched via \code{callr::r_bg()}. These processes are not
+monitored after launch; verify that the expected files exist in \code{path}
+before proceeding with analysis.
 }
 \description{
-Download one or more files listed in \code{requested_data} using the authenticated
-session in \code{account_login}. Files are written to \code{path}. Downloads occur in
-the calling R process but the file write and optional extraction are
-performed in a background R process (via callr::r_bg). If \code{unzip = TRUE}
-the original archive is removed after extraction.
+Download one or more files listed in \code{requested_data} using the
+authenticated session in \code{account_login}. Files are written to \code{path}.
+The file write and optional extraction are performed in a background R
+process (via \code{callr::r_bg()}). If \code{unzip = TRUE} the original \verb{.7z} archive
+is removed after extraction.
 }
 \details{
-The function uses rvest::session_jump_to() to request each download
-URL and then launches a background R process to write the binary content
-and optionally extract it. The function is silent about progress and
-returns invisibly; background processes are left running under callr.
+For each row in \code{requested_data} the function fetches the file content via
+the authenticated session and spawns a background process to write and
+optionally extract the file. Because extraction runs in the background, the
+function returns before the files are fully written to disk.
+}
+\examples{
+\dontrun{
+acct    <- account_login(Sys.getenv("LOBSTER_USER"), Sys.getenv("LOBSTER_PWD"))
+archive <- account_archive(acct)
+
+# Download all AAPL files to a local directory
+dir.create("data-lobster", showWarnings = FALSE)
+data_download(
+  requested_data = archive[archive$symbol == "AAPL", ],
+  account_login  = acct,
+  path           = "data-lobster"
+)
+
+# Keep the raw .7z archives without extracting
+data_download(
+  requested_data = archive,
+  account_login  = acct,
+  path           = "data-lobster",
+  unzip          = FALSE
+)
+}
+
+}
+\seealso{
+\code{\link[=account_login]{account_login()}}, \code{\link[=account_archive]{account_archive()}}
 }

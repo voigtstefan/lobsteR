@@ -4,57 +4,62 @@
 \alias{account_archive}
 \title{Retrieve LOBSTER data archive information}
 \usage{
-account_archive(account_login)
+account_archive(account)
 }
 \arguments{
-\item{account_login}{List object returned by \code{\link{account_login}}.
-Must contain a valid authenticated session.}
+\item{account}{list Output from \code{\link[=account_login]{account_login()}} containing a valid
+authenticated session (\code{valid == TRUE}).}
 }
 \value{
-A tibble with information about available archive data:
+A tibble with one row per available dataset and columns:
 \describe{
-\item{id}{Integer. Unique identifier for each dataset}
-\item{symbol}{Character. Stock/ETF ticker symbol (e.g., "SPY", "AAPL")}
-\item{start_date}{Date. First date of data coverage}
-\item{end_date}{Date. Last date of data coverage}
-\item{level}{Integer. Order book depth level (number of price levels)}
-\item{size}{Integer. File size in bytes}
-\item{download}{Character. Direct download URL for the dataset}
+\item{id}{integer. Unique identifier for each dataset.}
+\item{symbol}{character. Stock/ETF ticker symbol (e.g., \code{"SPY"}, \code{"AAPL"}).}
+\item{start_date}{Date. First date of data coverage.}
+\item{end_date}{Date. Last date of data coverage.}
+\item{level}{integer. Order book depth (number of price levels).}
+\item{size}{integer. File size in bytes.}
+\item{download}{character. Direct download URL for the dataset.}
 }
+Rows are ordered by \code{id} descending (most recently requested first).
+Datasets with zero file size (not yet processed by LOBSTER) are excluded.
 }
 \description{
 Fetches information about available datasets in your LOBSTER account archive.
-This includes details about symbols, date ranges, order book levels, file sizes,
-and download links for each available dataset.
+This includes details about symbols, date ranges, order book levels, file
+sizes, and download links for each available dataset.
 }
 \details{
-The function:
-\enumerate{
-\item Validates the provided account login is successful
-\item Navigates to the data archive page
-\item Scrapes the archive table and extracts download links
-\item Processes and cleans the data into a structured format
-\item Filters out empty datasets (size = 0)
-\item Orders results by ID in descending order (most recent first)
-}
-
-Only datasets with non-zero file sizes are returned. The download URLs
-can be used directly with \code{\link{data_download}} or similar functions.
+The function navigates to the archive page of the authenticated session,
+scrapes the archive table, extracts download links, and returns a structured
+tibble. Only datasets with non-zero file sizes are included — datasets still
+being processed by LOBSTER will not appear until processing is complete.
 }
 \examples{
 \dontrun{
-# Login and get archive info
-my_account <- account_login("user@example.com", "password")
-archive_info <- account_archive(my_account)
+acct <- account_login(
+  login = Sys.getenv("LOBSTER_USER"),
+  pwd   = Sys.getenv("LOBSTER_PWD")
+)
 
-# View available datasets
-print(archive_info)
+archive <- account_archive(acct)
+archive
+#> # A tibble: 3 × 7
+#>      id symbol start_date end_date   level    size download
+#>   <int> <chr>  <date>     <date>     <int>   <int> <chr>
+#> 1   102 AAPL   2023-01-03 2023-01-03     1  204800 https://…
+#> 2   101 MSFT   2023-01-03 2023-01-05     2  512000 https://…
+#> 3   100 SPY    2022-12-01 2022-12-31    10 1048576 https://…
 
-# Get SPY datasets only
-spy_data <- archive_info[archive_info$symbol == "SPY", ]
+# Filter to a single symbol before downloading
+data_download(
+  requested_data = archive[archive$symbol == "AAPL", ],
+  account_login  = acct,
+  path           = "data-lobster"
+)
 }
 
 }
 \seealso{
-\code{\link{account_login}}, \code{\link{data_download}}
+\code{\link[=account_login]{account_login()}}, \code{\link[=data_download]{data_download()}}
 }
