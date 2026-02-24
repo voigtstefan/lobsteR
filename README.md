@@ -85,6 +85,9 @@ request_query(
   end_date   = "2023-01-13",
   level      = 10
 )
+```
+
+```
 #>    symbol start_date   end_date level
 #> 2    MSFT 2023-01-03 2023-01-03    10
 #> 3    MSFT 2023-01-04 2023-01-04    10

@@ -78,7 +78,7 @@ automatically removing weekends and NYSE holidays. `level` sets the number of
 order book price levels included in the snapshot files (e.g. `10` returns the
 top 10 bid and ask levels).
 
-```{r}
+```{r eval = FALSE}
 library(lobsteR)
 
 request_query(
@@ -87,6 +87,19 @@ request_query(
   end_date   = "2023-01-13",
   level      = 10
 )
+```
+
+```
+#>    symbol start_date   end_date level
+#> 2    MSFT 2023-01-03 2023-01-03    10
+#> 3    MSFT 2023-01-04 2023-01-04    10
+#> 4    MSFT 2023-01-05 2023-01-05    10
+#> 5    MSFT 2023-01-06 2023-01-06    10
+#> 8    MSFT 2023-01-09 2023-01-09    10
+#> 9    MSFT 2023-01-10 2023-01-10    10
+#> 10   MSFT 2023-01-11 2023-01-11    10
+#> 11   MSFT 2023-01-12 2023-01-12    10
+#> 12   MSFT 2023-01-13 2023-01-13    10
 ```
 
 For large date ranges, use `frequency = "1 month"` to submit one request per
