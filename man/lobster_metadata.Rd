@@ -27,8 +27,9 @@ lobster_log(x)
 snapshots.
 \item \code{lobster_halts()}: a \code{data.table} with one row per halt that overlaps
 continuous trading: \code{start}, \code{end} (seconds after midnight), \code{start_time},
-\code{end_time} and \code{resumed} (\code{FALSE} if trading did not resume before the
-close).
+\code{end_time}, \code{resumed} (\code{FALSE} if trading did not resume before the
+close) and \code{ended_by} (\code{"resumption"}, \code{"execution"} when the first trade
+after the halt message came before any resumption message, or \code{"close"}).
 \item \code{lobster_log()}: a list with message counts: \code{n_raw} messages in the file
 (from \code{first_ts} to \code{last_ts}), \code{n_outside_session}, \code{n_in_halts},
 \code{n_cross_messages}, \code{n_halt_messages}, \code{n_kept}, \code{n_invalid_book} (kept

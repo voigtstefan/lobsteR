@@ -69,6 +69,20 @@ def test_halts():
     b = clean_b()
     assert b.halts["end"].to_list() == [46800] and b.halts["resumed"].to_list() == [False]
     assert lc._pair_halts([1, 2, 3, 4, 5, 6], [1, -1, -1, 0, 1, -1])[0].tolist() == [2, 6]
+    assert d.halts["ended_by"].to_list() == ["resumption"] and b.halts["ended_by"].to_list() == ["close"]
+
+
+def test_execution_ends_halt():
+    s, e, how = lc._pair_halts([10, 20], [-1, -1], [5, 15, 30])
+    assert s.tolist() == [10, 20] and e.tolist() == [14, 29] and how == ["execution", "execution"]
+    s, e, how = lc._pair_halts([10, 12], [-1, 1], [15])
+    assert e.tolist() == [12] and how == ["resumption"]
+
+
+def test_sum_by_is_float_without_data():
+    import numpy as np
+    out = lc._sum_by(np.array([]), np.array([]), 3)
+    assert out.dtype == np.float64 and out.tolist() == [0, 0, 0]
 
 
 def test_signs_and_book():

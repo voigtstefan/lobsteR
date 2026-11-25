@@ -385,19 +385,30 @@ def lobster_clean(message_file: str, orderbook_file: str, archive: str | None = 
                       window=(info_m["window_start"], info_m["window_end"]))
 
 
-def _pair_halts(ts_ns, price):
-    starts, ends, open_ = [], [], None
+def _pair_halts(ts_ns, price, exec_ns=()):
+    """-1 starts a halt; 1 (trading resumes) or the first execution after the start ends it (see R)."""
+    exec_ns = np.asarray(exec_ns, dtype=np.float64)
+    starts, ends, how, open_ = [], [], [], None
+
+    def first_exec_after(t):
+        k = int(np.searchsorted(exec_ns, t, side="right"))
+        return exec_ns[k] if k < len(exec_ns) else np.inf
+
     for t, p in zip(ts_ns, price):
+        if open_ is not None:
+            e = first_exec_after(open_)
+            if e < t:
+                starts.append(open_); ends.append(e - 1); how.append("execution")   # noqa: E702
+                open_ = None
         if p == -1 and open_ is None:
             open_ = t
         elif p == 1 and open_ is not None:
-            starts.append(open_)
-            ends.append(t)
+            starts.append(open_); ends.append(t); how.append("resumption")   # noqa: E702
             open_ = None
     if open_ is not None:
-        starts.append(open_)
-        ends.append(np.inf)
-    return np.array(starts, dtype=np.float64), np.array(ends, dtype=np.float64)
+        e = first_exec_after(open_)
+        starts.append(open_); ends.append(e - 1); how.append("execution" if np.isfinite(e) else "close")  # noqa: E702
+    return np.array(starts, dtype=np.float64), np.array(ends, dtype=np.float64), how
 
 
 def _clean_day(msg, book, ticker, date, n_levels, levels_read, hours, depth_bp,
@@ -465,9 +476,9 @@ def _clean_day(msg, book, ticker, date, n_levels, levels_read, hours, depth_bp,
                               "(e.g. ('09:30', '13:00'))?")
     if end_ns <= start_ns:
         raise ValueError("no continuous trading between the crosses and the trading hours")
-    hs, he = _pair_halts(ts_ns[typ == 7], price[typ == 7])
+    hs, he, how = _pair_halts(ts_ns[typ == 7], price[typ == 7], ts_ns[(typ == 4) | (typ == 5)])
     ov = (hs < end_ns) & (he > start_ns)
-    hs, he = hs[ov], he[ov]
+    hs, he, how = hs[ov], he[ov], [h for h, o in zip(how, ov) if o]
 
     in_session = ((ts_ns > start_ns) if start_after else (ts_ns >= start_ns)) & \
                  ((ts_ns < end_ns) if end_before else (ts_ns <= end_ns))
@@ -548,10 +559,10 @@ def _clean_day(msg, book, ticker, date, n_levels, levels_read, hours, depth_bp,
     halts = pl.DataFrame({
         "start": hs / 1e9, "end": he_c / 1e9,
         "start_time": _ny_time(hs / 1e9, date), "end_time": _ny_time(he_c / 1e9, date),
-        "resumed": np.isfinite(he),
+        "resumed": np.isfinite(he), "ended_by": how,
     }, schema={"start": pl.Float64, "end": pl.Float64,
                "start_time": pl.Datetime("ns", NY), "end_time": pl.Datetime("ns", NY),
-               "resumed": pl.Boolean})
+               "resumed": pl.Boolean, "ended_by": pl.String})
 
     typ_k = typ[k]
     log = dict(
@@ -578,8 +589,9 @@ def _clean_day(msg, book, ticker, date, n_levels, levels_read, hours, depth_bp,
 
 def _sum_by(b, v, n):
     ok = ~np.isnan(b)
+    # float64 also when nothing falls into the grid (np.bincount then returns integers)
     return np.bincount(b[ok].astype(np.int64) - 1, weights=np.asarray(v, dtype=np.float64)[ok],
-                       minlength=n)[:n]
+                       minlength=n)[:n].astype(np.float64)
 
 
 def _locf_index(mask_fill: np.ndarray) -> np.ndarray:

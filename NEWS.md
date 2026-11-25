@@ -1,5 +1,10 @@
 # lobsteR (development version)
 
+* A trading halt also ends at the first execution after it, if that comes
+  before any resumption message: some LOBSTER files (e.g. SPY, 2008-09-05)
+  hold halt messages without a resumption on days that trade normally, which
+  dropped the whole day. `lobster_halts()` gains `ended_by`.
+
 * New functions to clean LOBSTER data: `lobster_clean()` turns one day's
   message and order book files into a per-message table of continuous trading,
   `lobster_snapshots()` aggregates it to a regular time grid, and
