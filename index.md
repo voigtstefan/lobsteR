@@ -1,7 +1,7 @@
 # lobsteR
 
 `lobsteR` provides a tidy workflow for requesting, downloading, and
-reading [LOBSTER](https://app.lobsterdata.com/) high-frequency order
+reading [LOBSTER](https://php.lobsterdata.com/) high-frequency order
 book data directly from R. LOBSTER reconstructs full limit order books
 from NASDAQ historical message data and delivers them as pairs of
 message files and order book snapshot files. This package handles the
@@ -12,7 +12,7 @@ downstream high-frequency econometrics, see the
 package.
 
 **Prerequisites:** an active account at
-[lobsterdata.com](https://app.lobsterdata.com/) is required to request
+[lobsterdata.com](https://php.lobsterdata.com/) is required to request
 and download data.
 
 ## Installation

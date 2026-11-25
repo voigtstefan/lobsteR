@@ -22,6 +22,8 @@
   : Clean one LOBSTER day and aggregate it to snapshots
 - [`lobster_snapshots()`](https://voigtstefan.github.io/lobsteR/reference/lobster_snapshots.md)
   : Aggregate cleaned LOBSTER messages to a regular time grid
+- [`lobster_url()`](https://voigtstefan.github.io/lobsteR/reference/lobster_url.md)
+  : Address of the LOBSTER website
 - [`request_query()`](https://voigtstefan.github.io/lobsteR/reference/request_query.md)
   : Create a LOBSTER data request (one row per trading day)
 - [`request_submit()`](https://voigtstefan.github.io/lobsteR/reference/request_submit.md)

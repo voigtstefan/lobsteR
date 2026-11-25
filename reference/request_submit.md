@@ -8,7 +8,7 @@ network side effects and returns invisibly.
 ## Usage
 
 ``` r
-request_submit(account_login, request)
+request_submit(account_login, request, preopen = FALSE)
 ```
 
 ## Arguments
@@ -25,6 +25,11 @@ request_submit(account_login, request)
   data.frame A tibble as returned by
   [`request_query()`](https://voigtstefan.github.io/lobsteR/reference/request_query.md)
   with columns: symbol, start_date, end_date, level.
+
+- preopen:
+
+  logical(1) If `TRUE`, ask for the pre-market messages too (LOBSTER's
+  "preopen" option). Default `FALSE`.
 
 ## Value
 

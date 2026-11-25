@@ -47,7 +47,7 @@ returns invisibly.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">request_submit</span><span class="op">(</span><span class="va">account_login</span>, <span class="va">request</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">request_submit</span><span class="op">(</span><span class="va">account_login</span>, <span class="va">request</span>, preopen <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -63,6 +63,11 @@ response required for navigation.</p></dd>
 <dt id="arg-request">request<a class="anchor" aria-label="anchor" href="#arg-request"></a></dt>
 <dd><p>data.frame A tibble as returned by <code><a href="request_query.html">request_query()</a></code> with
 columns: symbol, start_date, end_date, level.</p></dd>
+
+
+<dt id="arg-preopen">preopen<a class="anchor" aria-label="anchor" href="#arg-preopen"></a></dt>
+<dd><p>logical(1) If <code>TRUE</code>, ask for the pre-market messages too
+(LOBSTER's "preopen" option). Default <code>FALSE</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">
