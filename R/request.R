@@ -172,6 +172,8 @@ request_query <- function(
 #'   response required for navigation.
 #' @param request data.frame A tibble as returned by [request_query()] with
 #'   columns: symbol, start_date, end_date, level.
+#' @param preopen logical(1) If `TRUE`, ask for the pre-market messages too
+#'   (LOBSTER's "preopen" option). Default `FALSE`.
 #'
 #' @return Invisibly returns `NULL`. The primary effect is to queue requests on
 #'   the LOBSTER server; processing happens server-side and may take some time.
@@ -199,17 +201,27 @@ request_query <- function(
 #' @importFrom rvest html_form html_form_set session_submit
 #' @importFrom httr add_headers
 #' @importFrom purrr pwalk
-request_submit <- function(account_login, request) {
+request_submit <- function(account_login, request, preopen = FALSE) {
   suppressMessages(
     pwalk(
       request,
       ~ {
-        html_form(x = account_login$submission)[[1]] |>
+        form <- html_form(x = account_login$submission)[[1]]
+        # "preopen1" is a hidden field (0) followed by a checkbox (1); the
+        # browser sends the checkbox's value when it is ticked
+        if (isTRUE(preopen)) {
+          is_preopen <- vapply(form$fields, \(f) identical(f$name, "preopen1"), logical(1))
+          form$fields[is_preopen] <- lapply(form$fields[is_preopen], \(f) {
+            f$value <- "1"
+            f
+          })
+        }
+        form |>
           html_form_set(
             stock1 = ..1,
-            startdate1 = ..2,
-            enddate1 = ..3,
-            level1 = ..4
+            startdate1 = as.character(..2),
+            enddate1 = as.character(..3),
+            level1 = as.character(..4)
           ) |>
           session_submit(
             x = account_login$session,
