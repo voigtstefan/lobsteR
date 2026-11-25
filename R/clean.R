@@ -12,8 +12,9 @@
 #'   \item **Book state.** Prices stay in LOBSTER's integer units
 #'     (USD x 10000) for all comparisons. Dummy prices (ask 9999999999, bid
 #'     -9999999999) mark empty levels. A book state is valid when both sides
-#'     are non-empty and the best ask is not below the best bid; otherwise all
-#'     book variables of that row are `NA`.
+#'     are non-empty and the best ask is not below the best bid; otherwise
+#'     midquote and spread are `NA`. In a one-sided book the empty side has
+#'     depth 0; in a crossed book all book variables are `NA`.
 #'   \item **Depth.** For each distance in `depth_bp`, the number of shares at
 #'     the levels priced within that many basis points of the best price on
 #'     each side (not of the midquote). `depth0` is the size at the best
@@ -90,7 +91,8 @@
 #'     \item{`depth{bp}_truncated`}{for each positive `bp`: depth may be cut
 #'       short by the number of levels in the file.}
 #'   }
-#'   Book variables are `NA` when the book is crossed or one side is empty.
+#'   Midquote and spread are `NA` when the book is crossed or one side is
+#'   empty. Depth is `NA` only in crossed books; an empty side has depth 0.
 #'   The attribute `"lobster"` holds the day's metadata, the crosses, the
 #'   halts, the book states at the session boundaries and a log of dropped
 #'   messages; [lobster_snapshots()] needs it, and [lobster_crosses()],
@@ -323,6 +325,7 @@ clean_day <- function(msg, book, ticker, date, n_levels, levels_read, hours,
   nm <- depth_names(depth_bp)
   book_vars <- function(idx) {
     ok <- valid[idx]
+    ok_depth <- !crossed[idx] # one-sided books: the empty side has depth 0
     na_if <- function(v, keep = ok) {
       v[!keep] <- NA_real_
       v
@@ -334,12 +337,12 @@ clean_day <- function(msg, book, ticker, date, n_levels, levels_read, hours,
       spread = na_if(20000 * (a1[idx] - b1[idx]) / x2[idx])
     )
     for (j in seq_along(depth_bp)) {
-      out[[nm$ask[j]]] <- na_if(book[[paste0("da", j)]][idx])
-      out[[nm$bid[j]]] <- na_if(book[[paste0("db", j)]][idx])
+      out[[nm$ask[j]]] <- na_if(book[[paste0("da", j)]][idx], ok_depth)
+      out[[nm$bid[j]]] <- na_if(book[[paste0("db", j)]][idx], ok_depth)
     }
     for (j in which(depth_bp > 0)) {
       tr <- book[[paste0("tr", j)]][idx]
-      tr[!ok] <- NA
+      tr[!ok_depth] <- NA
       out[[nm$trunc[j]]] <- tr
     }
     out

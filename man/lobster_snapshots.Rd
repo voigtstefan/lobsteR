@@ -40,9 +40,10 @@ book state counts for the time it is in force inside the interval; the
 state inherited from the previous interval counts from the interval's
 start, and a state that lasts beyond the interval's end counts only up
 to it. An interval without messages therefore gets the book state in
-force throughout. Time in halts, outside the session and in crossed or
-one-sided books does not count; an interval without any such time is
-\code{NA}.}
+force throughout. Time in halts, outside the session and in crossed
+books does not count, nor does time in one-sided books for the spread
+(depth counts it, with 0 on the empty side); an interval without any
+such time is \code{NA}.}
 \item{\code{signed_volume}}{net buyer-initiated volume in shares, the sum of
 \code{trade_sign * size} over all executions. Unsigned trades (hidden trades
 at the midquote) add zero. \code{NA} only when the interval has no trade.}

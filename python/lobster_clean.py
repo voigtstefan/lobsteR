@@ -473,6 +473,7 @@ def _clean_day(msg, book, ticker, date, n_levels, levels_read, hours, depth_bp,
         none = idx < 0
         idx = np.where(none, 0, idx)
         ok = valid[idx] & ~none
+        ok_depth = ~crossed[idx] & ~none   # one-sided books: the empty side has depth 0
 
         def na_if(v):
             return np.where(ok, v, np.nan)
@@ -486,9 +487,9 @@ def _clean_day(msg, book, ticker, date, n_levels, levels_read, hours, depth_bp,
             "spread": na_if(spread),
         }
         for j in range(len(depth_bp)):
-            out[ask_n[j]] = na_if(book[f"da{j}"][idx])
-            out[bid_n[j]] = na_if(book[f"db{j}"][idx])
-        trs = {tr_n[j]: (book[f"tr{j}"][idx], ok) for j in pos}
+            out[ask_n[j]] = np.where(ok_depth, book[f"da{j}"][idx], np.nan)
+            out[bid_n[j]] = np.where(ok_depth, book[f"db{j}"][idx], np.nan)
+        trs = {tr_n[j]: (book[f"tr{j}"][idx], ok_depth) for j in pos}
         return out, trs
 
     def frame(cols, trs):
@@ -671,14 +672,12 @@ def lobster_snapshots(day: LobsterDay, freq: float = 5, split_edges: bool = True
         den = _sum_by(wb[ok], w[ok], n_lab)
         with np.errstate(invalid="ignore", divide="ignore"):
             avg[c] = np.where(den > 0, num / den, np.nan)
-    okst = ~np.isnan(wb) & (w > 0) & ~np.isnan(tl["spread"])
-    has_state = _sum_by(wb[okst], np.ones(int(okst.sum())), n_lab) > 0
     trunc = {}
     for c in tr_cols:
         v = tl[c]
         ok = ~np.isnan(v) & ~np.isnan(wb) & (w > 0)
         t = (_sum_by(wb[ok], v[ok], n_lab) > 0).astype(np.float64)
-        t[~has_state] = np.nan
+        t[_sum_by(wb[ok], np.ones(int(ok.sum())), n_lab) == 0] = np.nan   # no book state
         trunc[c] = t
     if not split_edges:
         for c in avg_cols:

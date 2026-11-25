@@ -14,9 +14,10 @@
 #'     state inherited from the previous interval counts from the interval's
 #'     start, and a state that lasts beyond the interval's end counts only up
 #'     to it. An interval without messages therefore gets the book state in
-#'     force throughout. Time in halts, outside the session and in crossed or
-#'     one-sided books does not count; an interval without any such time is
-#'     `NA`.}
+#'     force throughout. Time in halts, outside the session and in crossed
+#'     books does not count, nor does time in one-sided books for the spread
+#'     (depth counts it, with 0 on the empty side); an interval without any
+#'     such time is `NA`.}
 #'   \item{`signed_volume`}{net buyer-initiated volume in shares, the sum of
 #'     `trade_sign * size` over all executions. Unsigned trades (hidden trades
 #'     at the midquote) add zero. `NA` only when the interval has no trade.}
@@ -166,15 +167,11 @@ lobster_snapshots <- function(x, freq = 5, split_edges = TRUE) {
     ifelse(den > 0, num / den, NA_real_)
   })
   names(avg) <- avg_cols
-  has_state <- sum_by(
-    wb[!is.na(wb) & w > 0 & !is.na(tl$spread)],
-    rep(1, sum(!is.na(wb) & w > 0 & !is.na(tl$spread))), n_lab
-  ) > 0
   trunc <- lapply(tr_cols, function(cc) {
     v <- tl[[cc]]
     ok <- !is.na(v) & !is.na(wb) & w > 0
     out <- sum_by(wb[ok], as.double(v[ok]), n_lab) > 0
-    out[!has_state] <- NA
+    out[sum_by(wb[ok], rep(1, sum(ok)), n_lab) == 0] <- NA # no book state
     out
   })
   names(trunc) <- tr_cols

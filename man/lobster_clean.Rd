@@ -69,7 +69,8 @@ of the best price, for each value of \code{depth_bp}.}
 \item{\verb{depth\{bp\}_truncated}}{for each positive \code{bp}: depth may be cut
 short by the number of levels in the file.}
 }
-Book variables are \code{NA} when the book is crossed or one side is empty.
+Midquote and spread are \code{NA} when the book is crossed or one side is
+empty. Depth is \code{NA} only in crossed books; an empty side has depth 0.
 The attribute \code{"lobster"} holds the day's metadata, the crosses, the
 halts, the book states at the session boundaries and a log of dropped
 messages; \code{\link[=lobster_snapshots]{lobster_snapshots()}} needs it, and \code{\link[=lobster_crosses]{lobster_crosses()}},
@@ -89,8 +90,9 @@ straight from a LOBSTER \verb{.7z} archive without unpacking it.
 \item \strong{Book state.} Prices stay in LOBSTER's integer units
 (USD x 10000) for all comparisons. Dummy prices (ask 9999999999, bid
 -9999999999) mark empty levels. A book state is valid when both sides
-are non-empty and the best ask is not below the best bid; otherwise all
-book variables of that row are \code{NA}.
+are non-empty and the best ask is not below the best bid; otherwise
+midquote and spread are \code{NA}. In a one-sided book the empty side has
+depth 0; in a crossed book all book variables are \code{NA}.
 \item \strong{Depth.} For each distance in \code{depth_bp}, the number of shares at
 the levels priced within that many basis points of the best price on
 each side (not of the midquote). \code{depth0} is the size at the best

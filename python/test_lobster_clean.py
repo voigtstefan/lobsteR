@@ -130,6 +130,12 @@ def test_archive(tmp_path):
 
 def test_one_sided_book():
     b = clean_b()
-    assert b.messages.filter(pl.col("ts") == 36000)["midquote"].to_list() == [None]
+    r = b.messages.filter(pl.col("ts") == 36000).row(0, named=True)
+    assert r["midquote"] is None and r["spread"] is None and r["best_bid"] is None
+    assert (r["depth0_ask"], r["depth5_ask"], r["depth0_bid"], r["depth5_bid"]) == (200, 400, 0, 0)
+    assert r["depth5_truncated"] is False
     s = lc.lobster_snapshots(b, freq=60)
-    assert s.filter(pl.col("ts").dt.strftime("%H:%M") == "10:01")["depth0_bid"].to_list() == [400]
+    m = s.filter(pl.col("ts").dt.strftime("%H:%M") == "10:01").row(0, named=True)
+    assert m["depth0_bid"] == pytest.approx((2 * 0 + 58 * 400) / 60)
+    assert m["depth0_ask"] == 200
+    assert m["spread"] == pytest.approx(10000 * 0.02 / 20.01)

@@ -133,11 +133,16 @@ test_that("book variables, dummies, depth and truncation", {
   cr <- x[x$ts == 43200]
   expect_true(is.na(cr$midquote) && is.na(cr$spread) && is.na(cr$depth5_ask))
   expect_equal(lobster_log(x)$n_crossed_book, 2L)
-  # one-sided book (day B, bid side empty): NA as well
+  # one-sided book (day B, bid side empty): no midquote or spread, but depth,
+  # with 0 on the empty side
   b <- clean_b()
   ob <- b[b$ts == 36000]
-  expect_true(is.na(ob$midquote) && is.na(ob$best_bid))
+  expect_true(is.na(ob$midquote) && is.na(ob$spread) && is.na(ob$best_bid))
   expect_equal(ob$best_ask, 20.02)
+  expect_equal(c(ob$depth0_ask, ob$depth5_ask), c(200, 400))
+  expect_equal(c(ob$depth0_bid, ob$depth5_bid), c(0, 0))
+  expect_false(ob$depth5_truncated)
+  expect_equal(lobster_log(b)$n_invalid_book, 1L)
 })
 
 test_that("only the levels needed are read", {
@@ -228,8 +233,12 @@ test_that("early close at 13:00 and a halt until the close", {
   expect_equal(format(range(s$ts), "%H:%M"), c("09:31", "13:00"))
   expect_true(all(s$halted[format(s$ts, "%H:%M") > "12:30"]))
   expect_true(all(is.na(s$spread[format(s$ts, "%H:%M") > "12:30"])))
-  # one-sided book from 10:00:00 to 10:00:02 does not count
-  expect_equal(s$depth0_bid[format(s$ts, "%H:%M") == "10:01"], 400)
+  # one-sided book from 10:00:00 to 10:00:02: depth 0 on the empty side,
+  # no spread
+  m <- format(s$ts, "%H:%M") == "10:01"
+  expect_equal(s$depth0_bid[m], (2 * 0 + 58 * 400) / 60)
+  expect_equal(s$depth0_ask[m], 200)
+  expect_equal(s$spread[m], 10000 * 0.02 / 20.01)
   # with the default 16:00 close, the closing cross ends the session
   expect_warning(
     b16 <- lobster_clean(fixture("b", "message"), fixture("b", "orderbook")),

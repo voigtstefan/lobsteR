@@ -17,6 +17,8 @@
   detected for any trading hours (e.g. early closes) and reported; snapshots
   carry `n_messages`, `n_trades`, `halted` and depth-truncation flags; time
   stamps are in `America/New_York`.
+* Crossed books give `NA` book variables. One-sided books give `NA` midquote
+  and spread, and depth 0 on the empty side.
 * Order books are read in blocks and only as deep as the depth measures need,
   so memory use does not depend on the number of levels.
 * A polars translation with the same functions and output is in `python/`.
