@@ -28,8 +28,10 @@
 #'     inside the trading hours. All crosses are reported, with price and
 #'     volume, in `lobster_crosses()`, and never enter the cleaned messages.
 #'   \item **Halts.** Type 7 messages are paired by their price field: a halt
-#'     (price -1) lasts until the next resumption of trading (price 1);
-#'     resumption of quoting (price 0) does not end it. Halts are found in the
+#'     (price -1) lasts until the next resumption of trading (price 1) or the
+#'     next execution, whichever comes first (some files hold halt messages
+#'     without a resumption on days that trade normally); resumption of
+#'     quoting (price 0) does not end it. Halts are found in the
 #'     full message stream before any time filter, so a halt that starts
 #'     before the open still ends at its resumption. A halt without resumption
 #'     lasts until the close. Messages during halts are dropped; the halts are
@@ -308,7 +310,10 @@ clean_day <- function(msg, book, ticker, date, n_levels, levels_read, hours,
       call. = FALSE
     )
   }
-  halts <- pair_halts(ts_ns[type == 7L], price[type == 7L])
+  halts <- pair_halts(
+    ts_ns[type == 7L], price[type == 7L],
+    ts_ns[type == 4L | type == 5L]
+  )
   halts <- halts[halts$start_ns < end_ns & halts$end_ns > start_ns, ,
     drop = FALSE
   ]
@@ -394,7 +399,8 @@ clean_day <- function(msg, book, ticker, date, n_levels, levels_read, hours,
     end = pmin(halts$end_ns, close_ns) / 1e9,
     start_time = as_ny_time(halts$start_ns / 1e9, date),
     end_time = as_ny_time(pmin(halts$end_ns, close_ns) / 1e9, date),
-    resumed = is.finite(halts$end_ns)
+    resumed = is.finite(halts$end_ns),
+    ended_by = halts$ended_by
   )
 
   log <- list(
@@ -435,26 +441,41 @@ clean_day <- function(msg, book, ticker, date, n_levels, levels_read, hours,
 }
 
 # Pair type-7 messages by their price field: -1 starts a halt, 1 (trading
-# resumes) ends it, 0 (quoting resumes) is ignored. A halt that never resumes
-# gets end = Inf.
-pair_halts <- function(ts_ns, price) {
+# resumes) ends it, 0 (quoting resumes) is ignored. No execution can happen
+# during a halt, so the first execution (type 4 or 5) after the start ends the
+# halt as well: some files hold halt messages without a resumption on days
+# that trade normally. A halt with neither lasts until the close (end = Inf).
+pair_halts <- function(ts_ns, price, exec_ns = numeric(0)) {
   starts <- numeric(0)
   ends <- numeric(0)
+  how <- character(0)
+  first_exec_after <- function(t) {
+    k <- findInterval(t, exec_ns) + 1L
+    if (k <= length(exec_ns)) exec_ns[k] else Inf
+  }
   open <- NA_real_
+  close_halt <- function(end, by) {
+    starts <<- c(starts, open)
+    ends <<- c(ends, end)
+    how <<- c(how, by)
+    open <<- NA_real_
+  }
   for (i in seq_along(ts_ns)) {
+    if (!is.na(open)) {
+      e <- first_exec_after(open)
+      if (e < ts_ns[i]) close_halt(e - 1, "execution") # keep the execution
+    }
     if (price[i] == -1 && is.na(open)) {
       open <- ts_ns[i]
     } else if (price[i] == 1 && !is.na(open)) {
-      starts <- c(starts, open)
-      ends <- c(ends, ts_ns[i])
-      open <- NA_real_
+      close_halt(ts_ns[i], "resumption")
     }
   }
   if (!is.na(open)) {
-    starts <- c(starts, open)
-    ends <- c(ends, Inf)
+    e <- first_exec_after(open)
+    close_halt(e - 1, if (is.finite(e)) "execution" else "close")
   }
-  data.frame(start_ns = starts, end_ns = ends)
+  data.frame(start_ns = starts, end_ns = ends, ended_by = how)
 }
 
 lobster_meta <- function(x) {
@@ -485,8 +506,9 @@ lobster_meta <- function(x) {
 #'   snapshots.
 #' * `lobster_halts()`: a `data.table` with one row per halt that overlaps
 #'   continuous trading: `start`, `end` (seconds after midnight), `start_time`,
-#'   `end_time` and `resumed` (`FALSE` if trading did not resume before the
-#'   close).
+#'   `end_time`, `resumed` (`FALSE` if trading did not resume before the
+#'   close) and `ended_by` (`"resumption"`, `"execution"` when the first trade
+#'   after the halt message came before any resumption message, or `"close"`).
 #' * `lobster_log()`: a list with message counts: `n_raw` messages in the file
 #'   (from `first_ts` to `last_ts`), `n_outside_session`, `n_in_halts`,
 #'   `n_cross_messages`, `n_halt_messages`, `n_kept`, `n_invalid_book` (kept

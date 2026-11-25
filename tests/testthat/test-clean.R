@@ -97,6 +97,23 @@ test_that("pair_halts handles unmatched resumptions and repeated halts", {
   h <- pair_halts(c(1, 2, 3, 4, 5, 6), c(1, -1, -1, 0, 1, -1))
   expect_equal(h$start_ns, c(2, 6))
   expect_equal(h$end_ns, c(5, Inf))
+  expect_equal(h$ended_by, c("resumption", "close"))
+})
+
+test_that("an execution ends a halt that has no resumption", {
+  # halt messages at 10 and 20 without resumption, trades at 5, 15 and 30:
+  # each halt ends just before the next trade, which is kept
+  h <- pair_halts(c(10, 20), c(-1, -1), exec_ns = c(5, 15, 30))
+  expect_equal(h$start_ns, c(10, 20))
+  expect_equal(h$end_ns, c(14, 29))
+  expect_equal(h$ended_by, c("execution", "execution"))
+  # a resumption before the next trade ends the halt as usual
+  h <- pair_halts(c(10, 12), c(-1, 1), exec_ns = 15)
+  expect_equal(h$end_ns, 12)
+  expect_equal(h$ended_by, "resumption")
+  # the fixture halts: one resumed, one (day B) until the close
+  expect_equal(lobster_halts(clean_a())$ended_by, "resumption")
+  expect_equal(lobster_halts(clean_b())$ended_by, "close")
 })
 
 test_that("trades are signed; midpoint trades are unsigned", {
