@@ -7,7 +7,7 @@ test_that("account_login returns expected structure with mocked rvest", {
     html_form = function(x) list(list()),
     html_form_set = function(form, ...) list(login = list(...)),
     session_submit = function(x, form, submit, add_headers) {
-      list(url = "https://data.lobsterdata.com/requestdata.php")
+      list(url = "https://php.lobsterdata.com/requestdata.php")
     },
     are_equal = function(x, y) identical(x, y),
     .env = asNamespace("lobsteR")
