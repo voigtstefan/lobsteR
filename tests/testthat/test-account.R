@@ -4,7 +4,7 @@ test_that("account_login returns expected structure when rvest calls succeed (st
     html_form = function(x) list(list()), # one empty form
     html_form_set = function(form, login, pwd) form, # return the form unchanged
     session_submit = function(x, form, submit, add_headers) {
-      list(url = "https://data.lobsterdata.com/requestdata.php")
+      list(url = "https://php.lobsterdata.com/requestdata.php")
     },
     add_headers = function(...) NULL,
     .env = asNamespace("lobsteR"),
@@ -84,7 +84,7 @@ test_that("account_archive parses archive table and filters zero-size rows", {
       expect_equal(as.integer(res$id[1]), 2L)
       expect_equal(res$symbol[1], "AAPL")
       expect_equal(as.integer(res$size[1]), 100L)
-      expect_true(grepl("^https?://lobsterdata\\.com/", res$download[1]))
+      expect_true(grepl("^https?://php\\.lobsterdata\\.com/", res$download[1]))
     }
   )
 })

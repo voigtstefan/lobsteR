@@ -19,7 +19,7 @@ knitr::opts_chunk$set(
 <!-- badges: end -->
 
 `lobsteR` provides a tidy workflow for requesting, downloading, and reading
-[LOBSTER](https://app.lobsterdata.com/) high-frequency order book data directly
+[LOBSTER](https://php.lobsterdata.com/) high-frequency order book data directly
 from R. LOBSTER reconstructs full limit order books from NASDAQ historical
 message data and delivers them as pairs of message files and order book
 snapshot files. This package handles the end-to-end pipeline — authentication,
@@ -28,7 +28,7 @@ analysis. For downstream high-frequency econometrics, see the
 [`highfrequency`](https://CRAN.R-project.org/package=highfrequency) package.
 
 **Prerequisites:** an active account at
-[lobsterdata.com](https://app.lobsterdata.com/) is required to request and download
+[lobsterdata.com](https://php.lobsterdata.com/) is required to request and download
 data.
 
 ## Installation

@@ -51,7 +51,7 @@
 #' @importFrom rvest session html_form html_form_set session_submit
 #' @importFrom assertthat are_equal
 account_login <- function(login, pwd) {
-  session <- session(url = "https://lobsterdata.com/SignIn.php")
+  session <- session(url = lobster_url("SignIn.php"))
 
   form <- html_form(x = session)[[1]] |>
     html_form_set(login = login, pwd = pwd)
@@ -63,13 +63,11 @@ account_login <- function(login, pwd) {
     httr::add_headers('x-requested-with' = 'XMLHttpRequest')
   )
 
-  valid <- assertthat::are_equal(
-    x = submission$url,
-    y = "https://data.lobsterdata.com/requestdata.php"
-  )
+  # After a successful login, LOBSTER forwards to its request page
+  valid <- grepl("requestdata\\.php$", submission$url)
 
   if (valid) {
-    message("Login on lobsterdata.com successful")
+    message("Login on ", lobster_url(), " successful")
   }
   list(
     valid = valid,
@@ -139,7 +137,7 @@ account_archive <- function(account) {
 
   session <- session_jump_to(
     x = account$submission,
-    url = "https://lobsterdata.com/data_archive.php"
+    url = lobster_url("data_archive.php")
   )
 
   archive <- html_table(session, fill = TRUE)[[1]]
@@ -151,7 +149,7 @@ account_archive <- function(account) {
   archive$download <- html_nodes(session, "td:nth-child(2) a") |>
     html_attr("href") |>
     grep("download", x = _, value = TRUE) |>
-    paste0("https://lobsterdata.com/", ... = _)
+    paste0(lobster_url(), "/", ... = _)
 
   archive$id <- gsub(".*id=", "", archive$download)
 

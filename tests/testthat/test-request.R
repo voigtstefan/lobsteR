@@ -50,7 +50,7 @@ test_that("request_query removes rows present in account_archive", {
     end_date = req$end_date,
     level = req$level,
     size = 100L,
-    download = "https://lobsterdata.com/download.php?id=1",
+    download = "https://php.lobsterdata.com/download.php?id=1",
     id = 1L,
     stringsAsFactors = FALSE
   )
@@ -145,8 +145,8 @@ test_that("data_download requests content and invokes callr::r_bg for each downl
       tmp <- tempdir()
       requested_data <- data.frame(
         download = c(
-          "https://lobsterdata.com/download.php?id=10",
-          "https://lobsterdata.com/download.php?id=11"
+          "https://php.lobsterdata.com/download.php?id=10",
+          "https://php.lobsterdata.com/download.php?id=11"
         ),
         id = c(10L, 11L),
         stringsAsFactors = FALSE

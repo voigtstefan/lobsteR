@@ -1,5 +1,7 @@
 # lobsteR (development version)
 
+* LOBSTER moved its sign-in, request, archive and download pages to `https://php.lobsterdata.com` (2026), when `lobsterdata.com` became a new web app. `account_login()`, `account_archive()` and `data_download()` now use that host through the new `lobster_url()`, which the option `lobsteR.base_url` can change. A successful login is recognised by the forward to `requestdata.php` on any host. LOBSTER's new API, which allows only 0 or 10 levels, is not used.
+
 * A trading halt also ends at the first execution after it, if that comes
   before any resumption message: some LOBSTER files (e.g. SPY, 2008-09-05)
   hold halt messages without a resumption on days that trade normally, which

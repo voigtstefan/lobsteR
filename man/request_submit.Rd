@@ -4,7 +4,7 @@
 \alias{request_submit}
 \title{Submit one or more requests to an authenticated LOBSTER account}
 \usage{
-request_submit(account_login, request)
+request_submit(account_login, request, preopen = FALSE)
 }
 \arguments{
 \item{account_login}{list Output from \code{\link[=account_login]{account_login()}} that contains a
@@ -13,6 +13,9 @@ response required for navigation.}
 
 \item{request}{data.frame A tibble as returned by \code{\link[=request_query]{request_query()}} with
 columns: symbol, start_date, end_date, level.}
+
+\item{preopen}{logical(1) If \code{TRUE}, ask for the pre-market messages too
+(LOBSTER's "preopen" option). Default \code{FALSE}.}
 }
 \value{
 Invisibly returns \code{NULL}. The primary effect is to queue requests on
