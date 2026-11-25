@@ -9,3 +9,5 @@ renv/*
 .httr-oauth
 .DS_Store
 inst/doc
+__pycache__/
+*.pyc

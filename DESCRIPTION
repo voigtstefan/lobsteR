@@ -1,7 +1,7 @@
 Type: Package
 Package: lobsteR
 Title: Access and Process 'LOBSTER' High-Frequency Data
-Version: 1.0.0
+Version: 1.0.0.9000
 Authors@R: c(
     person("Karol", "Kulma", , "kulmakarol@gmail.com", role = c("aut")),
     person("Stefan", "Voigt", , "stefan.voigt@econ.ku.dk", role = c("aut", "cre", "cph"))
@@ -21,6 +21,7 @@ Imports:
     archive,
     assertthat,
     callr,
+    data.table,
     dplyr,
     httr,
     lubridate,
@@ -29,8 +30,10 @@ Imports:
     timeDate
 Suggests:
     knitr,
+    nanoparquet,
     rmarkdown,
     testthat (>= 3.0.0),
+    withr,
     xml2
 Config/testthat/edition: 3
 Encoding: UTF-8
