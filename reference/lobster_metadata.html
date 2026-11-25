@@ -68,8 +68,9 @@
 snapshots.</p></li>
 <li><p><code>lobster_halts()</code>: a <code>data.table</code> with one row per halt that overlaps
 continuous trading: <code>start</code>, <code>end</code> (seconds after midnight), <code>start_time</code>,
-<code>end_time</code> and <code>resumed</code> (<code>FALSE</code> if trading did not resume before the
-close).</p></li>
+<code>end_time</code>, <code>resumed</code> (<code>FALSE</code> if trading did not resume before the
+close) and <code>ended_by</code> (<code>"resumption"</code>, <code>"execution"</code> when the first trade
+after the halt message came before any resumption message, or <code>"close"</code>).</p></li>
 <li><p><code>lobster_log()</code>: a list with message counts: <code>n_raw</code> messages in the file
 (from <code>first_ts</code> to <code>last_ts</code>), <code>n_outside_session</code>, <code>n_in_halts</code>,
 <code>n_cross_messages</code>, <code>n_halt_messages</code>, <code>n_kept</code>, <code>n_invalid_book</code> (kept

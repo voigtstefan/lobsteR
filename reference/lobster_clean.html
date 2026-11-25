@@ -185,8 +185,10 @@ before the closing cross (type 6, order id -2) whenever these lie
 inside the trading hours. All crosses are reported, with price and
 volume, in <code><a href="lobster_metadata.html">lobster_crosses()</a></code>, and never enter the cleaned messages.</p></li>
 <li><p><strong>Halts.</strong> Type 7 messages are paired by their price field: a halt
-(price -1) lasts until the next resumption of trading (price 1);
-resumption of quoting (price 0) does not end it. Halts are found in the
+(price -1) lasts until the next resumption of trading (price 1) or the
+next execution, whichever comes first (some files hold halt messages
+without a resumption on days that trade normally); resumption of
+quoting (price 0) does not end it. Halts are found in the
 full message stream before any time filter, so a halt that starts
 before the open still ends at its resumption. A halt without resumption
 lasts until the close. Messages during halts are dropped; the halts are

@@ -159,7 +159,9 @@ read it.
     and never enter the cleaned messages.
 
 4.  **Halts.** Type 7 messages are paired by their price field: a halt
-    (price -1) lasts until the next resumption of trading (price 1);
+    (price -1) lasts until the next resumption of trading (price 1) or
+    the next execution, whichever comes first (some files hold halt
+    messages without a resumption on days that trade normally);
     resumption of quoting (price 0) does not end it. Halts are found in
     the full message stream before any time filter, so a halt that
     starts before the open still ends at its resumption. A halt without

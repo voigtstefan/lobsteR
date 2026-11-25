@@ -39,8 +39,10 @@ lobster_log(x)
 
 - `lobster_halts()`: a `data.table` with one row per halt that overlaps
   continuous trading: `start`, `end` (seconds after midnight),
-  `start_time`, `end_time` and `resumed` (`FALSE` if trading did not
-  resume before the close).
+  `start_time`, `end_time`, `resumed` (`FALSE` if trading did not resume
+  before the close) and `ended_by` (`"resumption"`, `"execution"` when
+  the first trade after the halt message came before any resumption
+  message, or `"close"`).
 
 - `lobster_log()`: a list with message counts: `n_raw` messages in the
   file (from `first_ts` to `last_ts`), `n_outside_session`,
