@@ -149,6 +149,56 @@ keep the raw archives. Note that extraction runs in a background process, so
 the function returns before the files are fully written to disk — check the
 `path` directory before proceeding with analysis.
 
+### 6. Clean and aggregate
+
+`lobster_clean()` reads one day's message and order book files, keeps
+continuous trading and returns one row per message with the book state after
+it: midquote, spread, depth within given distances from the best price, and
+the sign of each trade. `lobster_snapshots()` aggregates this to a regular
+grid (default 5 seconds). `lobster_process()` does both, also straight from a
+downloaded `.7z` archive, without unpacking it:
+
+``` r
+days <- lobster_archive_files("data-lobster/MSFT_2023-01-03_2023-01-13_10.7z")
+
+snapshots <- lobster_process(
+  archive  = "data-lobster/MSFT_2023-01-03_2023-01-13_10.7z",
+  date     = "2023-01-03",
+  freq     = 5,          # seconds
+  depth_bp = c(0, 5)     # depth at the best price and within 5 bp of it
+)
+
+lobster_crosses(snapshots) # opening and closing crosses: price and volume
+lobster_halts(snapshots)   # trading halts
+lobster_log(snapshots)     # messages dropped and kept
+```
+
+Each snapshot is labelled by the end of its interval and holds the midquote
+at that instant; time-weighted spread and depth; signed volume (shares, net
+buyer-initiated), trading volume and midpoint volume (USD); the number of
+messages and trades; and flags for halts and for depth that may be cut short
+by the number of levels in the file. Time stamps are in New York time.
+
+The main choices:
+
+- Continuous trading runs from the opening cross (or 09:30) to 16:00 or the
+  closing cross. Set `trading_hours = c("09:30", "13:00")` on early-close
+  days. The crosses are reported, never mixed into the snapshots.
+- Hidden executions are signed against the midquote just before the trade.
+  Those exactly at the midquote (midpoint orders) stay unsigned: they count in
+  `trading_volume` and `midpoint_volume`, not in `signed_volume`.
+- Depth is measured from the best price on each side. Depth within `bp` basis
+  points needs about `bp / 10000 * price / tick + 1` levels; for SPY at USD 520
+  and 5 bp that is 27 levels. `depth5_truncated` shows when the file has too
+  few.
+
+The functions read the order book block by block and only as deep as needed,
+so memory use does not grow with the number of levels: a 50-level SPY day
+(7.2 million messages, 8.7 GB of order book CSV) takes about a minute and 4 GB
+of RAM on a Raspberry Pi 5, read straight from the archive. A polars version
+with the same functions and output is in
+[`python/lobster_clean.py`](python/lobster_clean.py).
+
 ## System dependencies on Linux
 
 The `archive` package used for `.7z` extraction requires system libraries. On
