@@ -28,6 +28,7 @@ import datetime as dt
 import gzip
 import os
 import re
+import shutil
 import subprocess
 from typing import Callable, Iterable, Sequence
 
@@ -95,9 +96,19 @@ def lobster_file_info(paths: str | Iterable[str]) -> pl.DataFrame:
     return pl.DataFrame(rows, schema=schema)
 
 
+def _sevenzip() -> str:
+    """The 7-Zip program: 7z (p7zip or 7-Zip), 7zz or 7za."""
+    for name in ("7z", "7zz", "7za"):
+        path = shutil.which(name)
+        if path:
+            return path
+    raise FileNotFoundError("reading .7z archives needs the 7z program (7-Zip or p7zip)")
+
+
 def _archive_members(archive: str) -> list[str]:
-    out = subprocess.run(["7z", "l", "-slt", "-ba", archive], check=True,
+    out = subprocess.run([_sevenzip(), "l", "-slt", archive], check=True,
                          capture_output=True, text=True).stdout
+    # the first "Path = " line is the archive itself; lobster_file_info() ignores it
     return [line[7:] for line in out.splitlines() if line.startswith("Path = ")]
 
 
@@ -128,7 +139,7 @@ class _Input:
         else:
             if not os.path.exists(archive):
                 raise FileNotFoundError(archive)
-            self.proc = subprocess.Popen(["7z", "e", "-so", archive, file],
+            self.proc = subprocess.Popen([_sevenzip(), "e", "-so", archive, file],
                                          stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
             self.stream = self.proc.stdout
 
