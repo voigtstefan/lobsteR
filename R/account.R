@@ -158,7 +158,7 @@ account_archive <- function(account) {
     ))
   }
 
-  archive <- html_table(session, fill = TRUE)[[1]]
+  archive <- html_table(session)[[1]]
 
   archive$Name <- archive$Delete <- NULL
 
