@@ -103,6 +103,7 @@ account_login <- function(login, pwd) {
 #' scrapes the archive table, extracts download links, and returns a structured
 #' tibble. Only datasets with non-zero file sizes are included — datasets still
 #' being processed by LOBSTER will not appear until processing is complete.
+#' An empty archive gives a table with the same columns and no rows.
 #'
 #' @examples
 #' \dontrun{
@@ -140,16 +141,30 @@ account_archive <- function(account) {
     url = lobster_url("data_archive.php")
   )
 
+  # An empty archive has no download links, and its page holds only the
+  # site's layout tables: return a table without rows instead of parsing them
+  download <- html_nodes(session, "td:nth-child(2) a") |>
+    html_attr("href") |>
+    grep("download", x = _, value = TRUE)
+  if (length(download) == 0) {
+    return(dplyr::tibble(
+      id = integer(),
+      symbol = character(),
+      start_date = as.Date(character()),
+      end_date = as.Date(character()),
+      level = integer(),
+      size = integer(),
+      download = character()
+    ))
+  }
+
   archive <- html_table(session, fill = TRUE)[[1]]
 
   archive$Name <- archive$Delete <- NULL
 
   colnames(archive) <- c("symbol", "start_date", "end_date", "level", "size")
 
-  archive$download <- html_nodes(session, "td:nth-child(2) a") |>
-    html_attr("href") |>
-    grep("download", x = _, value = TRUE) |>
-    paste0(lobster_url(), "/", ... = _)
+  archive$download <- paste0(lobster_url(), "/", download)
 
   archive$id <- gsub(".*id=", "", archive$download)
 
