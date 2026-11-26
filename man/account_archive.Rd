@@ -34,6 +34,7 @@ The function navigates to the archive page of the authenticated session,
 scrapes the archive table, extracts download links, and returns a structured
 tibble. Only datasets with non-zero file sizes are included — datasets still
 being processed by LOBSTER will not appear until processing is complete.
+An empty archive gives a table with the same columns and no rows.
 }
 \examples{
 \dontrun{
