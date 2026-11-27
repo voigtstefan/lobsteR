@@ -42,6 +42,18 @@ test_that("file names are parsed", {
   expect_equal(info$levels, c(50L, 10L, 50L, NA))
 })
 
+test_that("file names from the lobsterdata.com API (no window) are parsed", {
+  info <- lobster_file_info(c(
+    "LQDT_2025-06-11_message_10.csv",
+    "BRK.B_2025-06-11_orderbook_10.csv"
+  ))
+  expect_equal(info$file, c("message", "orderbook"))
+  expect_equal(info$ticker, c("LQDT", "BRK.B"))
+  expect_equal(info$date, as.Date(c("2025-06-11", "2025-06-11")))
+  expect_equal(info$levels, c(10L, 10L))
+  expect_true(all(is.na(info$window_start)))
+})
+
 test_that("ticker, date and levels come from the files", {
   x <- clean_a()
   meta <- attr(x, "lobster")

@@ -50,6 +50,17 @@ def test_file_info():
     assert info["window_end"][0] == 57600
 
 
+def test_file_info_api_names():
+    # Files from the lobsterdata.com API carry no requested window
+    info = lc.lobster_file_info(["LQDT_2025-06-11_message_10.csv",
+                                 "BRK.B_2025-06-11_orderbook_10.csv"])
+    assert info["file"].to_list() == ["message", "orderbook"]
+    assert info["ticker"].to_list() == ["LQDT", "BRK.B"]
+    assert info["date"].to_list() == [dt.date(2025, 6, 11)] * 2
+    assert info["levels"].to_list() == [10, 10]
+    assert info["window_start"].to_list() == [None, None]
+
+
 def test_crosses_and_session():
     d = clean_a()
     assert d.crosses["kind"].to_list() == ["opening", "other", "closing"]
