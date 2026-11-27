@@ -2,7 +2,9 @@
 #'
 #' LOBSTER names its files `{ticker}_{date}_{start}_{end}_{type}_{levels}.csv`,
 #' where `start` and `end` are the requested time window in milliseconds after
-#' midnight and `type` is `message` or `orderbook`. Monthly or daily archives
+#' midnight and `type` is `message` or `orderbook`. Files from the
+#' lobsterdata.com API have no window: `{ticker}_{date}_{type}_{levels}.csv`
+#' (`window_start` and `window_end` are then `NA`). Monthly or daily archives
 #' are named `{ticker}_{first date}_{last date}_{levels}.7z`. This function
 #' extracts these fields from file names or full paths.
 #'
@@ -33,7 +35,7 @@ lobster_file_info <- function(path) {
   path <- as.character(path)
   name <- basename(path)
   re_file <- paste0(
-    "^([^_]+)_([0-9]{4}-[0-9]{2}-[0-9]{2})_([0-9]+)_([0-9]+)_",
+    "^([^_]+)_([0-9]{4}-[0-9]{2}-[0-9]{2})(_([0-9]+)_([0-9]+))?_",
     "(message|orderbook)_([0-9]+)\\.(csv(\\.(gz|bz2|xz))?|parquet)$"
   )
   re_archive <- paste0(
@@ -56,13 +58,14 @@ lobster_file_info <- function(path) {
   if (any(is_file)) {
     m <- regmatches(name[is_file], regexec(re_file, name[is_file]))
     m <- do.call(rbind, m)
-    out$file[is_file] <- m[, 6]
+    out$file[is_file] <- m[, 7]
     out$ticker[is_file] <- m[, 2]
     out$date[is_file] <- as.Date(m[, 3])
     out$last_date[is_file] <- as.Date(m[, 3])
-    out$window_start[is_file] <- as.numeric(m[, 4]) / 1000
-    out$window_end[is_file] <- as.numeric(m[, 5]) / 1000
-    out$levels[is_file] <- as.integer(m[, 7])
+    # Files from the lobsterdata.com API carry no window in their names
+    out$window_start[is_file] <- ifelse(m[, 5] == "", NA_real_, suppressWarnings(as.numeric(m[, 5])) / 1000)
+    out$window_end[is_file] <- ifelse(m[, 6] == "", NA_real_, suppressWarnings(as.numeric(m[, 6])) / 1000)
+    out$levels[is_file] <- as.integer(m[, 8])
   }
   is_archive <- !is_file & grepl(re_archive, name)
   if (any(is_archive)) {

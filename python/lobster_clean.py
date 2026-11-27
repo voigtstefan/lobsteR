@@ -52,7 +52,7 @@ BID_EMPTY = 0.0  # dummy bid price -9999999999 = empty level
 # --------------------------------------------------------------------- files
 
 _RE_FILE = re.compile(
-    r"^([^_]+)_([0-9]{4}-[0-9]{2}-[0-9]{2})_([0-9]+)_([0-9]+)_"
+    r"^([^_]+)_([0-9]{4}-[0-9]{2}-[0-9]{2})(?:_([0-9]+)_([0-9]+))?_"
     r"(message|orderbook)_([0-9]+)\.(csv(\.(gz|bz2|xz))?|parquet)$"
 )
 _RE_ARCHIVE = re.compile(
@@ -62,7 +62,8 @@ _RE_ARCHIVE = re.compile(
 
 
 def lobster_file_info(paths: str | Iterable[str]) -> pl.DataFrame:
-    """Parse LOBSTER file names ({ticker}_{date}_{start}_{end}_{type}_{levels}.csv)
+    """Parse LOBSTER file names ({ticker}_{date}_{start}_{end}_{type}_{levels}.csv, or
+    {ticker}_{date}_{type}_{levels}.csv from the lobsterdata.com API, without the window)
     and archive names ({ticker}_{first}_{last}_{levels}.7z).
 
     Returns one row per path with columns path, file ("message", "orderbook",
@@ -80,8 +81,9 @@ def lobster_file_info(paths: str | Iterable[str]) -> pl.DataFrame:
         if m:
             d = dt.date.fromisoformat(m.group(2))
             r.update(file=m.group(5), ticker=m.group(1), date=d, last_date=d,
-                     window_start=int(m.group(3)) / 1000,
-                     window_end=int(m.group(4)) / 1000, levels=int(m.group(6)))
+                     window_start=int(m.group(3)) / 1000 if m.group(3) else None,
+                     window_end=int(m.group(4)) / 1000 if m.group(4) else None,
+                     levels=int(m.group(6)))
         else:
             m = _RE_ARCHIVE.match(name)
             if m:
